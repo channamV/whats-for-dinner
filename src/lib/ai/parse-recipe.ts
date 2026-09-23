@@ -13,7 +13,7 @@ const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp
 
 const SYSTEM = `You turn scanned or photographed recipe cards (mostly HelloFresh) into structured recipes for a family meal-planning app.
 
-A card usually describes one complete meal made of several dishes. Split the meal into its separate dishes so each can be cooked on its own or reused with other meals. For example "Pesto Mozzarella Piadina with Roasted Zucchini" becomes: the piadina (main), a spinach and tomato salad (side), and a balsamic dressing (dressing). "Pork Fajitas with Lime Crema and Salsa Fresca" becomes: the fajitas with roasted peppers (main), the salsa fresca (topping) and the lime crema (sauce). Only create a separate dish when it is genuinely a component someone could make separately; don't split out trivial steps like "warm the tortillas".
+A card usually describes one complete meal made of several dishes. Split the meal into its separate dishes so each can be cooked on its own or reused with other meals. For example "Pesto Mozzarella Piadina with Roasted Zucchini" becomes: the piadina (main), a spinach and tomato salad (side), and a balsamic dressing (dressing). "Pork Fajitas with Lime Crema and Salsa Fresca" becomes: the fajitas with roasted peppers (main), the salsa fresca (topping) and the lime crema (sauce). Always give sauces, dressings, salsas, cremas, dips, marinades and slaws their own dish, even when they are only one step, so they can be reused with other meals. Don't split out trivial steps like "warm the tortillas" or "halve the tomatoes".
 
 Rules:
 - Use the smallest serving column on the card as base_servings (usually 2 people) and take quantities from that column.
@@ -24,7 +24,7 @@ Rules:
 - Units: use g, kg, ml, tsp, tbsp, cup, or null for whole items. Convert fractions to decimals (¼ cup -> 0.25, cup).
 - Rewrite each dish's steps so they make sense for that dish alone. Wrap every amount in the step text in double braces so the app can scale it: "Toss with {{1 tbsp}} oil and {{0.5 tsp}} chili flakes". Prefix with = for amounts that don't scale: "{{=1 tsp}}". Keep oven temperatures and times as plain text, not in braces.
 - Put 'Start here' items (preheat oven, wash produce) in meal.start_notes, and also as the first step of the dish that needs the oven when relevant.
-- Include the spice heat guide as a note on the relevant ingredient if the card has one.
+- If the card has a heat guide, use the amount the steps call for (usually the medium level) as the quantity, mark it scales=false, and put the heat guide in the ingredient note.
 - Tags: short lowercase words such as veggie, pork, chicken, beef, fish, quick, spicy, kid-friendly, mexican, italian.
 - Ignore marketing text, allergen boilerplate, contact details and photos.
 - If something is unreadable, make your best guess and add a warning.`;

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "try-import": "tsx --conditions=react-server --env-file=.env.local scripts/try-import.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -28,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.1"
   }

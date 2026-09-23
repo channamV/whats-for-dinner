@@ -59,3 +59,16 @@ describe("buildGroceryLines", () => {
     expect(lines.find((l) => l.name === "Oil")).toMatchObject({ quantity: 3, unit: "tbsp" });
   });
 });
+
+describe("real import: pork fajitas", () => {
+  it("recombines ingredients the importer split between dishes", async () => {
+    const { fajitas } = await import("./__fixtures__/fajitas");
+    const lines = buildGroceryLines(
+      fajitas.dishes.map((d) => ({ label: d.title, ingredients: d.ingredients, baseServings: d.base_servings, servings: 4 })),
+    );
+    expect(lines.find((l) => l.name === "Lime")?.quantity).toBe(2);
+    expect(lines.find((l) => l.name === "Red Onion")).toMatchObject({ quantity: 226, unit: "g" });
+    expect(lines.find((l) => l.name === "Pork Strips")).toMatchObject({ quantity: 680, unit: "g" });
+    expect(lines.find((l) => l.name.startsWith("Chipotle"))?.quantity).toBe(0.125); // fixed amount
+  });
+});
