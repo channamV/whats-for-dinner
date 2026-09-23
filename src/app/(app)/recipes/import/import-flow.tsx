@@ -7,6 +7,7 @@ import type { ImportResult } from "@/lib/ai/schema";
 import { DishEditor, type DishDraft } from "@/components/dish-editor";
 import { ChevronIcon, SparkleIcon, TrashIcon, UploadIcon } from "@/components/icons";
 import { discardUploads, saveImport } from "../../actions";
+import { THUMB_SUFFIX, pdfThumbnail } from "@/lib/pdf-thumbnail";
 
 type Phase = "pick" | "reading" | "review";
 
@@ -63,6 +64,13 @@ export function ImportFlow({ householdId }: { householdId: string }) {
         const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: blob.type || f.type });
         if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
         uploaded.push(path);
+        if (blob.type === "application/pdf" || f.type === "application/pdf") {
+          // Best effort: the card page makes one later if this fails.
+          try {
+            const thumb = await pdfThumbnail(blob);
+            await supabase.storage.from(BUCKET).upload(path + THUMB_SUFFIX, thumb, { contentType: "image/jpeg", upsert: true });
+          } catch {}
+        }
       }
       setPaths(uploaded);
       setStatus("Reading your recipe… this usually takes 30–90 seconds.");
