@@ -18,7 +18,8 @@ Stack: Next.js 16 (App Router) · Supabase (Postgres, auth, storage, realtime) �
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine).
 2. In the **SQL Editor**, paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This creates the tables, the row-level security rules, the private `recipe-files` storage bucket, and realtime for grocery items.
    With the Supabase CLI you can run `npx supabase link` and then `npx supabase db push` instead.
-3. **Authentication → URL Configuration**: set **Site URL** to your app URL (e.g. `https://dinner.hannam.pro`). Add `http://localhost:3000/**` to the redirect URLs for local development.
+3. **Authentication → URL Configuration**: set **Site URL** to the address the app is live at (e.g. `https://dinner.hannam.pro`). Under **Redirect URLs**, add every address the app runs at, each followed by `/**`, e.g. `https://dinner.hannam.pro/**`, your `*.vercel.app` address, and `http://localhost:3000/**`. Confirmation and password-reset links only go to addresses on this list.
+   The built-in email service only sends a few emails an hour. For a private family app you can switch off **Authentication → Sign In / Providers → Email → Confirm email** so new accounts can sign in straight away.
 4. Copy the project URL and publishable (anon) key from **Project Settings → API**.
 
 ### 2. Anthropic

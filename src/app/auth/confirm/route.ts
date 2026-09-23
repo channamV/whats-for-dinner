@@ -18,5 +18,5 @@ export async function GET(request: NextRequest) {
       ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       : { error: new Error("missing code") };
 
-  return NextResponse.redirect(new URL(error ? "/login" : next, origin));
+  return NextResponse.redirect(new URL(error ? "/login?error=link" : next, origin));
 }

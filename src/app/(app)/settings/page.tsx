@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { requireHousehold } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
@@ -55,7 +56,10 @@ export default async function SettingsPage() {
 
       <form action={signOut}>
         <p className="mb-2 text-sm text-muted">Signed in as {user.email}</p>
-        <button className="btn-secondary">Sign out</button>
+        <div className="flex gap-2">
+          <Link href="/reset-password" className="btn-secondary">Change password</Link>
+          <button className="btn-secondary">Sign out</button>
+        </div>
       </form>
     </div>
   );
