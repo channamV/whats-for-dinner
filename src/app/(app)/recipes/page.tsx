@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Recipes" };
 export default async function RecipesPage(props: PageProps<"/recipes">) {
   const sp = await props.searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
-  const tab = sp.tab === "dishes" ? "dishes" : "meals";
+  const tab = sp.tab === "meals" ? "meals" : "dishes";
   const fav = sp.fav === "1";
   const { supabase } = await requireHousehold();
   const [meals, recipes] = await Promise.all([
@@ -29,7 +29,7 @@ export default async function RecipesPage(props: PageProps<"/recipes">) {
     <>
       <PageHeader
         title="Recipes"
-        subtitle={`${meals.length} meals · ${recipes.length} dishes`}
+        subtitle={`${recipes.length} dishes · ${meals.length} complete meals`}
         actions={
           <>
             <Link href="/recipes/import" className="btn-primary"><UploadIcon className="h-4 w-4" /> Import</Link>
@@ -54,13 +54,13 @@ export default async function RecipesPage(props: PageProps<"/recipes">) {
       </form>
 
       <div className="mb-4 flex gap-1 rounded-xl bg-surface-2 p-1 text-sm">
-        {(["meals", "dishes"] as const).map((t) => (
+        {(["dishes", "meals"] as const).map((t) => (
           <Link
             key={t}
             href={href({ tab: t })}
             className={`flex-1 rounded-lg py-1.5 text-center ${tab === t ? "bg-surface font-medium shadow-sm" : "text-muted"}`}
           >
-            {t === "meals" ? `Meals (${meals.length})` : `Dishes (${recipes.length})`}
+            {t === "meals" ? `Complete Meals (${meals.length})` : `Dishes (${recipes.length})`}
           </Link>
         ))}
       </div>

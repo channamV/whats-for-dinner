@@ -83,7 +83,7 @@ export async function saveImport(raw: ImportInput): Promise<{ error: string } | 
 
   if (!input.saveAsMeal) {
     refresh();
-    redirect(recipes.length === 1 ? `/recipes/${recipes[0].id}` : "/recipes?tab=dishes");
+    redirect(recipes.length === 1 ? `/recipes/${recipes[0].id}` : "/recipes");
   }
 
   const { data: meal, error: mealError } = await supabase
@@ -168,7 +168,7 @@ export async function deleteRecipe(id: string) {
   await supabase.from("recipes").delete().eq("id", id);
   await removeUnusedFiles(supabase, (data?.source_files as string[] | undefined) ?? []);
   refresh();
-  redirect("/recipes?tab=dishes");
+  redirect("/recipes");
 }
 
 export async function deleteMeal(id: string, withDishes: boolean) {
@@ -192,7 +192,7 @@ export async function deleteMeal(id: string, withDishes: boolean) {
   // Files stay while any remaining dish still links to them.
   await removeUnusedFiles(supabase, files);
   refresh();
-  redirect("/recipes");
+  redirect("/recipes?tab=meals");
 }
 
 export async function updateMeal(id: string, form: FormData) {
