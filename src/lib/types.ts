@@ -47,6 +47,7 @@ export type Recipe = {
   notes: string | null;
   source: string | null;
   image_path: string | null;
+  favorite: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -64,6 +65,7 @@ export type Meal = {
   source_files: string[];
   image_path: string | null;
   notes: string | null;
+  favorite: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -32,25 +32,34 @@ function searchTerm(q: string) {
   return q.replace(/[,()%*\\]/g, " ").trim();
 }
 
-export async function listMeals(sb: SupabaseClient, q?: string) {
+export type ListOptions = { q?: string; favoritesOnly?: boolean };
+
+export async function listMeals(sb: SupabaseClient, { q, favoritesOnly }: ListOptions = {}) {
   let query = sb
     .from("meals")
-    .select("id, title, subtitle, tags, total_minutes, image_path, source, dishes:meal_dishes(count)")
+    .select("id, title, subtitle, tags, total_minutes, image_path, source, favorite, dishes:meal_dishes(count)")
+    .order("favorite", { ascending: false })
     .order("title");
   const t = q && searchTerm(q);
   if (t) query = query.or(`title.ilike.%${t}%,subtitle.ilike.%${t}%`);
+  if (favoritesOnly) query = query.eq("favorite", true);
   const { data } = await query;
-  return (data ?? []) as (Pick<Meal, "id" | "title" | "subtitle" | "tags" | "total_minutes" | "image_path" | "source"> & {
+  return (data ?? []) as (Pick<Meal, "id" | "title" | "subtitle" | "tags" | "total_minutes" | "image_path" | "source" | "favorite"> & {
     dishes: { count: number }[];
   })[];
 }
 
-export async function listRecipes(sb: SupabaseClient, q?: string) {
-  let query = sb.from("recipes").select("id, title, description, tags, total_minutes, base_servings").order("title");
+export async function listRecipes(sb: SupabaseClient, { q, favoritesOnly }: ListOptions = {}) {
+  let query = sb
+    .from("recipes")
+    .select("id, title, description, tags, total_minutes, base_servings, favorite")
+    .order("favorite", { ascending: false })
+    .order("title");
   const t = q && searchTerm(q);
   if (t) query = query.or(`title.ilike.%${t}%,description.ilike.%${t}%`);
+  if (favoritesOnly) query = query.eq("favorite", true);
   const { data } = await query;
-  return (data ?? []) as Pick<Recipe, "id" | "title" | "description" | "tags" | "total_minutes" | "base_servings">[];
+  return (data ?? []) as Pick<Recipe, "id" | "title" | "description" | "tags" | "total_minutes" | "base_servings" | "favorite">[];
 }
 
 export async function getPlan(sb: SupabaseClient, from: string, to: string): Promise<PlanEntryFull[]> {

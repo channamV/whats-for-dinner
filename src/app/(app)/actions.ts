@@ -147,6 +147,12 @@ export async function saveRecipe(raw: DishInput & { mealId?: string | null }): P
   redirect(`/recipes/${data.id}`);
 }
 
+export async function setFavorite(kind: "meal" | "recipe", id: string, favorite: boolean) {
+  const { supabase } = await requireHousehold();
+  await supabase.from(kind === "meal" ? "meals" : "recipes").update({ favorite }).eq("id", id);
+  refresh();
+}
+
 export async function deleteRecipe(id: string) {
   const { supabase } = await requireHousehold();
   await supabase.from("recipes").delete().eq("id", id);
@@ -285,8 +291,8 @@ export async function suggestForWeek(
   const dates = weekDates(start);
 
   const [{ data: meals }, { data: recipes }, { data: history }, planned] = await Promise.all([
-    supabase.from("meals").select("id, title, tags, total_minutes"),
-    supabase.from("recipes").select("id, title, tags, total_minutes, role:meal_dishes(role)"),
+    supabase.from("meals").select("id, title, tags, total_minutes, favorite"),
+    supabase.from("recipes").select("id, title, tags, total_minutes, favorite, role:meal_dishes(role)"),
     supabase.from("meal_plan_entries").select("meal_id, recipe_id, plan_date").order("plan_date", { ascending: false }).limit(500),
     getPlan(supabase, dates[0], dates[6]),
   ]);
@@ -299,10 +305,10 @@ export async function suggestForWeek(
 
   // Standalone dishes are only offered if they're mains or not part of any meal.
   const library: LibraryItem[] = [
-    ...(meals ?? []).map((m, i) => ({ key: `m${i + 1}`, kind: "meal" as const, id: m.id, title: m.title, tags: m.tags, total_minutes: m.total_minutes, last_planned: last.get(m.id) ?? null })),
+    ...(meals ?? []).map((m, i) => ({ key: `m${i + 1}`, kind: "meal" as const, id: m.id, title: m.title, tags: m.tags, total_minutes: m.total_minutes, favorite: m.favorite, last_planned: last.get(m.id) ?? null })),
     ...(recipes ?? [])
       .filter((r) => !r.role?.length || r.role.some((x: { role: string }) => x.role === "main"))
-      .map((r, i) => ({ key: `r${i + 1}`, kind: "recipe" as const, id: r.id, title: r.title, tags: r.tags, total_minutes: r.total_minutes, last_planned: last.get(r.id) ?? null })),
+      .map((r, i) => ({ key: `r${i + 1}`, kind: "recipe" as const, id: r.id, title: r.title, tags: r.tags, total_minutes: r.total_minutes, favorite: r.favorite, last_planned: last.get(r.id) ?? null })),
   ];
   if (!library.length) return { error: "Add a few recipes first, then I can suggest a plan." };
 

@@ -10,6 +10,7 @@ export type LibraryItem = {
   title: string;
   tags: string[];
   total_minutes: number | null;
+  favorite: boolean;
   last_planned: string | null;
 };
 
@@ -40,9 +41,9 @@ export async function suggestPlan(opts: {
   const libraryText = opts.library
     .map(
       (i) =>
-        `${i.key} | ${i.title} | tags: ${i.tags.join(", ") || "-"} | ${i.total_minutes ?? "?"} min | last planned: ${
-          i.last_planned ?? "never"
-        }`,
+        `${i.key} | ${i.title}${i.favorite ? " ★ favourite" : ""} | tags: ${i.tags.join(", ") || "-"} | ${
+          i.total_minutes ?? "?"
+        } min | last planned: ${i.last_planned ?? "never"}`,
     )
     .join("\n");
 
@@ -52,7 +53,7 @@ export async function suggestPlan(opts: {
     thinking: { type: "adaptive" },
     output_config: { effort: "low", format: zodOutputFormat(SuggestionSchema) },
     system:
-      "You plan family dinners from the household's own recipe library. Pick one library item per requested date. Prefer variety across proteins and cuisines, avoid repeating anything planned in the last two weeks unless the library is small, favour quicker meals on weekdays, and follow the user's preferences. Only use keys that appear in the library.",
+      "You plan family dinners from the household's own recipe library. Pick one library item per requested date. Prefer variety across proteins and cuisines, avoid repeating anything planned in the last two weeks unless the library is small, favour quicker meals on weekdays, include the family's ★ favourites more often (while still avoiding recent repeats), and follow the user's preferences. Only use keys that appear in the library.",
     messages: [
       {
         role: "user",

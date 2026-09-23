@@ -6,6 +6,7 @@ import { PlanAndListForms } from "@/components/plan-and-list-forms";
 import { IngredientList, StepList } from "@/components/recipe-body";
 import { ServingsPicker, parseServes } from "@/components/servings-picker";
 import { ConfirmButton } from "@/components/confirm-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import { getLists, getRecipe } from "@/lib/data";
 import { requireHousehold } from "@/lib/session";
 import { deleteRecipe } from "../../actions";
@@ -33,7 +34,10 @@ export default async function RecipePage(props: PageProps<"/recipes/[id]">) {
             ← {m.meal!.title}
           </Link>
         ))}
-        <h1 className="font-display text-3xl font-bold leading-tight">{recipe.title}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-display text-3xl font-bold leading-tight">{recipe.title}</h1>
+          <FavoriteButton kind="recipe" id={recipe.id} favorite={recipe.favorite} withLabel className="mt-1 shrink-0" />
+        </div>
         {recipe.description && <p className="mt-1 text-muted">{recipe.description}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           {recipe.total_minutes && <span className="chip gap-1"><ClockIcon className="h-3 w-3" />{recipe.total_minutes} min</span>}

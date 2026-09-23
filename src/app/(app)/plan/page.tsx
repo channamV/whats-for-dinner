@@ -80,12 +80,12 @@ export default async function PlanPage(props: PageProps<"/plan">) {
                   <option value="">{day.length ? "Add another…" : "What's for dinner?"}</option>
                   {meals.length > 0 && (
                     <optgroup label="Meals">
-                      {meals.map((m) => <option key={m.id} value={`meal:${m.id}`}>{m.title}</option>)}
+                      {meals.map((m) => <option key={m.id} value={`meal:${m.id}`}>{m.favorite ? "★ " : ""}{m.title}</option>)}
                     </optgroup>
                   )}
                   {recipes.length > 0 && (
                     <optgroup label="Dishes">
-                      {recipes.map((r) => <option key={r.id} value={`recipe:${r.id}`}>{r.title}</option>)}
+                      {recipes.map((r) => <option key={r.id} value={`recipe:${r.id}`}>{r.favorite ? "★ " : ""}{r.title}</option>)}
                     </optgroup>
                   )}
                 </select>

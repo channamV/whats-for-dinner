@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClockIcon, PlusIcon } from "@/components/icons";
 import { ConfirmButton } from "@/components/confirm-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import { PlanAndListForms } from "@/components/plan-and-list-forms";
 import { IngredientList, StepList } from "@/components/recipe-body";
 import { ServingsPicker, parseServes } from "@/components/servings-picker";
@@ -40,9 +41,12 @@ export default async function MealPage(props: PageProps<"/meals/[id]">) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image} alt="" className="aspect-[16/9] w-full rounded-2xl object-cover" />
         )}
-        <div>
-          <h1 className="font-display text-3xl font-bold leading-tight">{meal.title}</h1>
-          {meal.subtitle && <p className="text-lg text-muted">{meal.subtitle}</p>}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-3xl font-bold leading-tight">{meal.title}</h1>
+            {meal.subtitle && <p className="text-lg text-muted">{meal.subtitle}</p>}
+          </div>
+          <FavoriteButton kind="meal" id={meal.id} favorite={meal.favorite} withLabel className="mt-1 shrink-0" />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {meal.total_minutes && <span className="chip gap-1"><ClockIcon className="h-3 w-3" />{meal.total_minutes} min</span>}
@@ -63,6 +67,7 @@ export default async function MealPage(props: PageProps<"/meals/[id]">) {
               <Link href={`/recipes/${d.recipe_id}?serves=${servings}`} className="font-display text-lg font-semibold hover:text-accent">
                 {d.recipe.title}
               </Link>
+              <FavoriteButton kind="recipe" id={d.recipe_id} favorite={d.recipe.favorite} className="ml-1 align-middle" />
             </div>
             <form action={removeDishFromMeal.bind(null, meal.id, d.recipe_id)}>
               <ConfirmButton message="Remove this dish from the meal? The dish stays in your library." className="btn-ghost px-2 py-1 text-xs">

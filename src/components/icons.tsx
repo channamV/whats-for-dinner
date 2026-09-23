@@ -34,3 +34,8 @@ export const TrashIcon = ({ className }: P) => (
 export const ChevronIcon = ({ className }: P) => (
   <svg viewBox="0 0 24 24" className={className} {...base}><path d="M9 6l6 6-6 6" /></svg>
 );
+export const StarIcon = ({ className, filled }: P & { filled?: boolean }) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} fill={filled ? "currentColor" : "none"}>
+    <path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9l-5.3 2.7 1-5.8-4.2-4.1 5.9-.9z" />
+  </svg>
+);
