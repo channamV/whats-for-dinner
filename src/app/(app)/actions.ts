@@ -10,6 +10,7 @@ import { buildGroceryLines, type IngredientSource } from "@/lib/grocery";
 import { suggestPlan, type LibraryItem, type PlanSuggestion } from "@/lib/ai/suggest-plan";
 import { formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import type { GroceryItem, Ingredient } from "@/lib/types";
+import { removeUnusedFiles } from "@/lib/files";
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -74,7 +75,9 @@ export async function saveImport(raw: ImportInput): Promise<{ error: string } | 
   const sourceFiles = input.sourceFiles.filter((p) => p.startsWith(`${household.id}/`));
   const { data: recipes, error } = await supabase
     .from("recipes")
-    .insert(input.dishes.map((d) => ({ ...recipeRow(d, household.id, input.meal.source), created_by: user.id })))
+    .insert(
+      input.dishes.map((d) => ({ ...recipeRow(d, household.id, input.meal.source), source_files: sourceFiles, created_by: user.id })),
+    )
     .select("id");
   if (error || !recipes) return { error: error?.message ?? "Couldn't save the recipes." };
 
@@ -147,6 +150,12 @@ export async function saveRecipe(raw: DishInput & { mealId?: string | null }): P
   redirect(`/recipes/${data.id}`);
 }
 
+/** Deletes uploads from an import the user started over on (only files nothing refers to). */
+export async function discardUploads(paths: string[]) {
+  const { supabase, household } = await requireHousehold();
+  await removeUnusedFiles(supabase, paths.filter((p) => p.startsWith(`${household.id}/imports/`)));
+}
+
 export async function setFavorite(kind: "meal" | "recipe", id: string, favorite: boolean) {
   const { supabase } = await requireHousehold();
   await supabase.from(kind === "meal" ? "meals" : "recipes").update({ favorite }).eq("id", id);
@@ -155,13 +164,17 @@ export async function setFavorite(kind: "meal" | "recipe", id: string, favorite:
 
 export async function deleteRecipe(id: string) {
   const { supabase } = await requireHousehold();
+  const { data } = await supabase.from("recipes").select("source_files").eq("id", id).maybeSingle();
   await supabase.from("recipes").delete().eq("id", id);
+  await removeUnusedFiles(supabase, (data?.source_files as string[] | undefined) ?? []);
   refresh();
   redirect("/recipes?tab=dishes");
 }
 
 export async function deleteMeal(id: string, withDishes: boolean) {
   const { supabase } = await requireHousehold();
+  const { data: meal } = await supabase.from("meals").select("source_files").eq("id", id).maybeSingle();
+  const files = [...((meal?.source_files as string[] | undefined) ?? [])];
   if (withDishes) {
     const { data } = await supabase.from("meal_dishes").select("recipe_id").eq("meal_id", id);
     const ids = (data ?? []).map((d) => d.recipe_id);
@@ -169,9 +182,15 @@ export async function deleteMeal(id: string, withDishes: boolean) {
     const { data: shared } = await supabase.from("meal_dishes").select("recipe_id").in("recipe_id", ids).neq("meal_id", id);
     const keep = new Set((shared ?? []).map((s) => s.recipe_id));
     const remove = ids.filter((r) => !keep.has(r));
-    if (remove.length) await supabase.from("recipes").delete().in("id", remove);
+    if (remove.length) {
+      const { data: gone } = await supabase.from("recipes").select("source_files").in("id", remove);
+      files.push(...(gone ?? []).flatMap((r) => r.source_files as string[]));
+      await supabase.from("recipes").delete().in("id", remove);
+    }
   }
   await supabase.from("meals").delete().eq("id", id);
+  // Files stay while any remaining dish still links to them.
+  await removeUnusedFiles(supabase, files);
   refresh();
   redirect("/recipes");
 }

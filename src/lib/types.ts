@@ -46,6 +46,7 @@ export type Recipe = {
   equipment: string[];
   notes: string | null;
   source: string | null;
+  source_files: string[];
   image_path: string | null;
   favorite: boolean;
   created_at: string;

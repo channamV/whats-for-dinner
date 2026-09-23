@@ -18,7 +18,7 @@ Stack: Next.js 16 (App Router) · Supabase (Postgres, auth, storage, realtime) �
 
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine).
 2. In the **SQL Editor**, paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This creates the tables, the row-level security rules, the private `recipe-files` storage bucket, and realtime for grocery items.
-   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (e.g. `0002_favorites.sql`). Each one is safe to run more than once.
+   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (`0002_favorites.sql`, `0003_recipe_source_files.sql`, …). Each one is safe to run more than once.
    With the Supabase CLI you can run `npx supabase link` and then `npx supabase db push` instead.
 3. **Authentication → URL Configuration**: set **Site URL** to the address the app is live at (e.g. `https://dinner.hannam.pro`). Under **Redirect URLs**, add every address the app runs at, each followed by `/**`, e.g. `https://dinner.hannam.pro/**`, your `*.vercel.app` address, and `http://localhost:3000/**`. Confirmation and password-reset links only go to addresses on this list.
    The built-in email service only sends a few emails an hour. For a private family app you can switch off **Authentication → Sign In / Providers → Email → Confirm email** so new accounts can sign in straight away.
@@ -50,6 +50,7 @@ Recipe import can take 30–90 seconds. The import route sets `maxDuration = 300
 
 - **Recipes → Import**: upload one or more files for the same card (up to 10). Review what the AI found, fix anything it misread, untick dishes you don't want, then save as a meal or as individual dishes.
 - **Step amounts**: amounts written as `{{1 tbsp}}` in a step scale with the table size. `{{=1 tsp}}` stays fixed. The importer writes these for you.
+- **Originals**: every meal and dish imported from a card links back to the scan or photo. Files are deleted once no meal or dish uses them, and uploads from imports that were never saved are cleared out after a day.
 - **Meal pages**: add existing dishes (for example, a lime crema with a different main) or write a new one.
 - **Plan**: add meals per day, change the table size per night, mark nights as cooked, and build the week's grocery list. "Suggest dinners" fills empty days from your library and avoids repeats.
 

@@ -8,6 +8,8 @@ import { ServingsPicker, parseServes } from "@/components/servings-picker";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { getLists, getRecipe } from "@/lib/data";
+import { signedFileLinks } from "@/lib/files";
+import { OriginalLinks } from "@/components/original-links";
 import { requireHousehold } from "@/lib/session";
 import { deleteRecipe } from "../../actions";
 
@@ -25,6 +27,7 @@ export default async function RecipePage(props: PageProps<"/recipes/[id]">) {
   const [recipe, lists] = await Promise.all([getRecipe(supabase, id), getLists(supabase)]);
   if (!recipe) notFound();
   const servings = parseServes(sp.serves, household.default_servings);
+  const originals = await signedFileLinks(supabase, recipe.source_files ?? []);
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
@@ -61,6 +64,8 @@ export default async function RecipePage(props: PageProps<"/recipes/[id]">) {
 
       {recipe.equipment.length > 0 && <p className="text-sm text-muted">You&apos;ll need: {recipe.equipment.join(", ")}</p>}
       {recipe.notes && <p className="whitespace-pre-line rounded-xl bg-surface-2 p-4 text-sm">{recipe.notes}</p>}
+
+      <OriginalLinks links={originals} />
 
       <PlanAndListForms target={`recipe:${recipe.id}`} servings={servings} lists={lists} />
 

@@ -6,7 +6,7 @@ import { BUCKET } from "@/lib/supabase/env";
 import type { ImportResult } from "@/lib/ai/schema";
 import { DishEditor, type DishDraft } from "@/components/dish-editor";
 import { ChevronIcon, SparkleIcon, TrashIcon, UploadIcon } from "@/components/icons";
-import { saveImport } from "../../actions";
+import { discardUploads, saveImport } from "../../actions";
 
 type Phase = "pick" | "reading" | "review";
 
@@ -282,7 +282,15 @@ export function ImportFlow({ householdId }: { householdId: string }) {
         <button className="btn-primary flex-1 shadow-lg sm:flex-none" onClick={save} disabled={saving}>
           {saving ? "Saving…" : saveAsMeal ? "Save meal" : "Save dishes"}
         </button>
-        <button className="btn-secondary" onClick={() => setPhase("pick")} disabled={saving}>
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            if (paths.length) void discardUploads(paths);
+            setPaths([]);
+            setPhase("pick");
+          }}
+          disabled={saving}
+        >
           Start over
         </button>
       </div>

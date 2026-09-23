@@ -8,8 +8,9 @@ import { PlanAndListForms } from "@/components/plan-and-list-forms";
 import { IngredientList, StepList } from "@/components/recipe-body";
 import { ServingsPicker, parseServes } from "@/components/servings-picker";
 import { getLists, getMeal, listRecipes } from "@/lib/data";
+import { signedFileLinks } from "@/lib/files";
+import { OriginalLinks } from "@/components/original-links";
 import { requireHousehold } from "@/lib/session";
-import { BUCKET } from "@/lib/supabase/env";
 import { DISH_ROLES } from "@/lib/types";
 import { addDishToMeal, deleteMeal, removeDishFromMeal } from "../../actions";
 
@@ -28,10 +29,8 @@ export default async function MealPage(props: PageProps<"/meals/[id]">) {
   if (!meal) notFound();
   const servings = parseServes(sp.serves, household.default_servings);
 
-  const signed = meal.source_files.length
-    ? (await supabase.storage.from(BUCKET).createSignedUrls(meal.source_files, 60 * 60)).data ?? []
-    : [];
-  const image = meal.image_path ? signed.find((s) => s.path === meal.image_path)?.signedUrl : null;
+  const originals = await signedFileLinks(supabase, meal.source_files);
+  const image = meal.image_path ? originals.find((o) => o.path === meal.image_path)?.url : null;
   const inMeal = new Set(meal.dishes.map((d) => d.recipe_id));
 
   return (
@@ -101,16 +100,7 @@ export default async function MealPage(props: PageProps<"/meals/[id]">) {
         <Link href={`/recipes/new?meal=${meal.id}`} className="btn-ghost mt-2 px-0"><PlusIcon className="h-4 w-4" /> Or write a new dish</Link>
       </details>
 
-      {signed.length > 0 && (
-        <p className="text-sm text-muted">
-          Original:{" "}
-          {signed.map((s, i) => (
-            <a key={s.path ?? String(i)} href={s.signedUrl ?? undefined} target="_blank" rel="noreferrer" className="mr-3 text-accent underline">
-              {s.path?.toLowerCase().endsWith(".pdf") ? "recipe card (PDF)" : `photo ${i + 1}`}
-            </a>
-          ))}
-        </p>
-      )}
+      <OriginalLinks links={originals} />
 
       <div className="flex flex-wrap gap-2">
         <Link href={`/meals/${id}/edit`} className="btn-secondary">Edit meal</Link>
