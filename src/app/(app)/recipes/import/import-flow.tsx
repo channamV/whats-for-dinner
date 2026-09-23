@@ -68,7 +68,7 @@ export function ImportFlow({ householdId }: { householdId: string }) {
           // Best effort: the card page makes one later if this fails.
           try {
             const thumb = await pdfThumbnail(blob);
-            await supabase.storage.from(BUCKET).upload(path + THUMB_SUFFIX, thumb, { contentType: "image/jpeg", upsert: true });
+            await supabase.storage.from(BUCKET).upload(path + THUMB_SUFFIX, thumb, { contentType: "image/jpeg", upsert: false });
           } catch {}
         }
       }

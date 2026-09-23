@@ -39,7 +39,7 @@ function OriginalCard({ file }: { file: OriginalFile }) {
         setGenerated(objectUrl);
         await createClient()
           .storage.from(BUCKET)
-          .upload(file.path + THUMB_SUFFIX, blob, { contentType: "image/jpeg", upsert: true });
+          .upload(file.path + THUMB_SUFFIX, blob, { contentType: "image/jpeg", upsert: false });
       } catch (e) {
         console.error("thumbnail failed", e);
         if (!cancelled) setFailed(true);
