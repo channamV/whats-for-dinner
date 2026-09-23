@@ -46,15 +46,22 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   redirect(safeNext(form.get("next")));
 }
 
+/** Where to go after creating an account: the welcome page, keeping an ?invite= code if there is one. */
+function welcomeDestination(form: FormData) {
+  const next = safeNext(form.get("next"));
+  return next.startsWith("/welcome") ? next : "/welcome";
+}
+
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const supabase = await createClient();
+  const welcome = welcomeDestination(form);
   const { data, error } = await supabase.auth.signUp({
     email: email(form),
     password: String(form.get("password") ?? ""),
-    options: { emailRedirectTo: `${await origin()}/auth/confirm?next=/welcome` },
+    options: { emailRedirectTo: `${await origin()}/auth/confirm?next=${encodeURIComponent(welcome)}` },
   });
   if (error) return { error: friendly(error.message) };
-  if (data.session) redirect("/welcome");
+  if (data.session) redirect(welcome);
   return {
     message: "Check your email for a confirmation link. Open it in this browser, then you'll be signed in.",
     unconfirmed: true,
@@ -68,7 +75,7 @@ export async function resendConfirmation(_: AuthState, form: FormData): Promise<
   const { error } = await supabase.auth.resend({
     type: "signup",
     email: address,
-    options: { emailRedirectTo: `${await origin()}/auth/confirm?next=/welcome` },
+    options: { emailRedirectTo: `${await origin()}/auth/confirm?next=${encodeURIComponent(welcomeDestination(form))}` },
   });
   if (error) return { error: friendly(error.message), unconfirmed: true };
   return { message: `We sent a new confirmation link to ${address}. Open it in this browser.`, unconfirmed: true };

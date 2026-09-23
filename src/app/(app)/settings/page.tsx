@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { InviteActions } from "@/components/invite-actions";
 import { PageHeader } from "@/components/page-header";
 import { requireHousehold } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
@@ -14,6 +16,9 @@ export default async function SettingsPage() {
     .select("user_id, display_name, role")
     .eq("household_id", household.id)
     .order("created_at");
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const inviteUrl = `${origin}/welcome?invite=${encodeURIComponent(household.invite_code)}`;
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
@@ -42,8 +47,11 @@ export default async function SettingsPage() {
 
       <section className="card space-y-3 p-4">
         <h2 className="font-semibold">Invite family</h2>
-        <p className="text-sm text-muted">They create an account, choose &ldquo;Join your family&rdquo;, and enter this code:</p>
+        <p className="text-sm text-muted">
+          Send them an invite, or have them create an account, choose &ldquo;Join your family&rdquo; and enter this code:
+        </p>
         <p className="rounded-xl bg-surface-2 py-3 text-center font-mono text-2xl font-semibold tracking-[0.3em]">{household.invite_code}</p>
+        <InviteActions url={inviteUrl} code={household.invite_code} householdName={household.name} fromName={displayName} />
         <ul className="divide-y divide-line text-sm">
           {(members ?? []).map((m) => (
             <li key={m.user_id} className="flex justify-between py-2">

@@ -7,8 +7,8 @@ type Mode = "in" | "up" | "forgot";
 
 const TITLES: Record<Mode, string> = { in: "Sign in", up: "Create account", forgot: "Send reset link" };
 
-export function LoginForm({ next, linkError }: { next: string; linkError: boolean }) {
-  const [mode, setMode] = useState<Mode>("in");
+export function LoginForm({ next, linkError, invited }: { next: string; linkError: boolean; invited: boolean }) {
+  const [mode, setMode] = useState<Mode>(invited ? "up" : "in");
   const [email, setEmail] = useState("");
   const [wantResend, setWantResend] = useState(false);
   const [signInState, signInAction, signingIn] = useActionState<AuthState, FormData>(signIn, {});
@@ -29,6 +29,12 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
 
   return (
     <div className="card space-y-4 p-6">
+      {invited && (
+        <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
+          You&apos;ve been invited to join a household. {mode === "up" ? "Create an account" : "Sign in"} and you&apos;ll join it
+          straight away.
+        </p>
+      )}
       {linkError && !state.error && !state.message && (
         <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
           That link has expired or was opened in a different browser. Sign in, or request a new link below.
@@ -79,6 +85,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
       {showResend && (
         <form action={resendAction} className="space-y-2 border-t border-line pt-4">
           <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="next" value={next} />
           {resendState.error && <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">{resendState.error}</p>}
           {resendState.message && <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">{resendState.message}</p>}
           <button className="btn-secondary w-full" disabled={resending || !email}>

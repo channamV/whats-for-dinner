@@ -5,7 +5,9 @@ import { WelcomeForms } from "./welcome-forms";
 
 export const metadata: Metadata = { title: "Welcome" };
 
-export default async function WelcomePage() {
+export default async function WelcomePage(props: PageProps<"/welcome">) {
+  const { invite } = await props.searchParams;
+  const code = typeof invite === "string" ? invite.trim().toUpperCase().slice(0, 16) : "";
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +23,7 @@ export default async function WelcomePage() {
     <main className="mx-auto max-w-md px-4 py-10">
       <h1 className="mb-2 font-display text-3xl font-bold">Welcome!</h1>
       <p className="mb-6 text-muted">Recipes, plans and grocery lists are shared with everyone in your household.</p>
-      <WelcomeForms />
+      <WelcomeForms inviteCode={code} />
     </main>
   );
 }
