@@ -5,6 +5,18 @@ import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function updateSession(request: NextRequest) {
+  // Supabase falls back to the Site URL (e.g. "/?code=...") when the requested
+  // redirect isn't on its allow list; finish the sign-in wherever it lands.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && !request.nextUrl.pathname.startsWith("/auth")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    url.search = "";
+    url.searchParams.set("code", code);
+    url.searchParams.set("next", "/welcome");
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
