@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatQuantity, parseQuantity } from "@/lib/quantity";
 import { CATEGORIES, type Category, type GroceryItem, type GroceryList } from "@/lib/types";
@@ -18,6 +18,32 @@ const AISLE_LABELS: Record<Category, string> = {
   frozen: "Frozen",
   other: "Other",
 };
+
+// "Show completed" is remembered on this device; it's a viewing preference, not shared.
+const SHOW_COMPLETED_KEY = "wfd:show-completed";
+const prefListeners = new Set<() => void>();
+let memoryPref = false; // used when storage is unavailable (private mode etc.)
+
+function readShowCompleted() {
+  try {
+    return localStorage.getItem(SHOW_COMPLETED_KEY) === "1";
+  } catch {
+    return memoryPref;
+  }
+}
+
+function writeShowCompleted(value: boolean) {
+  memoryPref = value;
+  try {
+    localStorage.setItem(SHOW_COMPLETED_KEY, value ? "1" : "0");
+  } catch {}
+  prefListeners.forEach((l) => l());
+}
+
+function subscribePref(listener: () => void) {
+  prefListeners.add(listener);
+  return () => prefListeners.delete(listener);
+}
 
 const UNIT_WORDS = new Set(["g", "kg", "ml", "l", "tsp", "tbsp", "cup", "cups", "oz", "lb", "lbs", "pkg", "can", "cans", "bunch", "bag"]);
 
@@ -37,6 +63,18 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
   const [category, setCategory] = useState<Category>("produce");
   const [name, setName] = useState(list.name);
   const [, start] = useTransition();
+  const showCompleted = useSyncExternalStore(subscribePref, readShowCompleted, () => false);
+  const [undo, setUndo] = useState<GroceryItem | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function changeShowCompleted(value: boolean) {
+    writeShowCompleted(value);
+    if (value) setUndo(null);
+  }
+
+  useEffect(() => () => {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+  }, []);
 
   // Everyone in the household sees check-offs as they happen.
   useEffect(() => {
@@ -62,8 +100,25 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
   }, [supabase, list.id]);
 
   async function toggle(item: GroceryItem) {
-    setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)));
-    await supabase.from("grocery_items").update({ checked: !item.checked }).eq("id", item.id);
+    const checked = !item.checked;
+    setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, checked } : i)));
+    // A ticked item disappears when completed items are hidden, so offer a quick undo.
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    if (checked && !showCompleted) {
+      setUndo(item);
+      undoTimer.current = setTimeout(() => setUndo(null), 5000);
+    } else {
+      setUndo(null);
+    }
+    await supabase.from("grocery_items").update({ checked }).eq("id", item.id);
+  }
+
+  async function undoTick() {
+    if (!undo) return;
+    const item = undo;
+    setUndo(null);
+    setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, checked: false } : i)));
+    await supabase.from("grocery_items").update({ checked: false }).eq("id", item.id);
   }
 
   async function remove(id: string) {
@@ -90,11 +145,13 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
     if (ids.length) await supabase.from("grocery_items").delete().in("id", ids);
   }
 
+  const visible = showCompleted ? items : items.filter((i) => !i.checked);
   const grouped = CATEGORIES.map((c) => ({
     category: c,
-    items: items.filter((i) => i.category === c).sort((a, b) => Number(a.checked) - Number(b.checked) || a.position - b.position),
+    items: visible.filter((i) => i.category === c).sort((a, b) => Number(a.checked) - Number(b.checked) || a.position - b.position),
   })).filter((g) => g.items.length);
   const remaining = items.filter((i) => !i.checked).length;
+  const completed = items.length - remaining;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -106,7 +163,26 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
           onBlur={() => name.trim() && name !== list.name && start(() => updateList(list.id, { name: name.trim() }))}
           aria-label="List name"
         />
-        <p className="text-muted">{remaining ? `${remaining} to get` : items.length ? "All done!" : "Nothing on the list yet"}</p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-muted">{remaining ? `${remaining} to get` : items.length ? "All done!" : "Nothing on the list yet"}</p>
+          {completed > 0 && (
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
+              <span>Show completed ({completed})</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showCompleted}
+                aria-label="Show completed items"
+                onClick={() => changeShowCompleted(!showCompleted)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${showCompleted ? "bg-accent" : "bg-line"}`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${showCompleted ? "translate-x-5" : ""}`}
+                />
+              </button>
+            </label>
+          )}
+        </div>
       </div>
 
       <form onSubmit={add} className="sticky top-2 z-10 mb-4 flex gap-2 rounded-2xl bg-bg/90 py-1 backdrop-blur md:top-16">
@@ -116,6 +192,15 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
         </select>
         <button className="btn-primary shrink-0">Add</button>
       </form>
+
+      {!showCompleted && items.length > 0 && remaining === 0 && (
+        <div className="card p-6 text-center">
+          <p className="font-medium">Everything&apos;s ticked off. 🎉</p>
+          <button className="mt-2 text-sm font-medium text-accent" onClick={() => changeShowCompleted(true)}>
+            Show the {completed} completed item{completed === 1 ? "" : "s"}
+          </button>
+        </div>
+      )}
 
       <div className="space-y-4">
         {grouped.map((g) => (
@@ -156,6 +241,16 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
           Delete list
         </button>
       </div>
+      {undo && (
+        <div className="fixed inset-x-0 bottom-20 z-30 flex justify-center px-4 md:bottom-6" role="status">
+          <div className="flex items-center gap-3 rounded-xl bg-ink px-4 py-2.5 text-sm text-bg shadow-lg">
+            <span className="max-w-56 truncate">Ticked {undo.name}</span>
+            <button className="font-semibold text-accent-soft underline" onClick={undoTick}>
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
