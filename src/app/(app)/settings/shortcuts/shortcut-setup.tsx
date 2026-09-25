@@ -107,7 +107,7 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
       <section className="card space-y-4 p-4">
         <h2 className="font-semibold">2. Build the Shortcut on your iPhone (once)</h2>
         <p className="text-sm text-muted">
-          Each Reminders list gets its own small block of 5 actions. Build the Grocery block first and test it, then add Costco.
+          Each Reminders list gets its own small block of actions. Build the Grocery block first and test it, then add Costco.
           Tip: open this page on your iPhone so you can copy and paste as you go.
         </p>
         {!key && (
@@ -149,13 +149,18 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
               </ul>
             </li>
             <li>
-              <b>Show Notification</b>: it should show <i>Contents of URL</i>. (The app replies with a sentence like &ldquo;Added 5 items to
-              Week of Sep 21&rdquo;.)
+              <b>Text</b>: add the action called <i>Text</i>, tap inside it, choose <i>Select Variable</i> and tap <b>Contents of URL</b>.
+              <span className="block text-muted">This turns the app&apos;s reply into plain text so the next two steps can use it.</span>
             </li>
             <li>
-              <b>If</b>: set it to <i>If <b>Contents of URL</b> contains <b>Added</b></i>. Delete any extra empty <i>Condition</i> row. Inside the If, add{" "}
-              <b>Remove Reminders</b>, tap its input and choose <b>Reminders</b> (the result of step A, <i>not</i> Contents of URL). Leave the{" "}
-              <i>Otherwise</i> part empty.
+              <b>Show Notification</b>: show the <b>Text</b> from the step above. (The app replies with a sentence like &ldquo;Added 5 items
+              to Week of Sep 21&rdquo;.)
+            </li>
+            <li>
+              <b>If</b>: set it to <i>If <b>Text</b> contains <b>Added</b></i> (pick the Text variable, not Contents of URL). Delete any extra
+              empty <i>Condition</i> row. Inside the If, add <b>Remove Reminders</b>, tap its input, choose <i>Select Variable</i> and tap the{" "}
+              <b>Reminders</b> result of step A. It should turn solid blue; pale grey means nothing is selected. Leave the <i>Otherwise</i> part
+              empty.
               <span className="block text-muted">
                 This clears them from Reminders only once they&apos;re safely in the app. If the sync fails, nothing is removed.
               </span>
@@ -172,8 +177,8 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
 
           <h3 className="pt-1 font-semibold">Costco block (and any other store)</h3>
           <p className="text-muted">
-            Add the same actions A–F again below the first block, with <b>Costco</b> as the list in A and this address in C. In the new
-            actions, make sure each variable you pick (Reminders, Combined Text, Contents of URL) is the one from the Costco block.
+            Add the same actions A–G again below the first block, with <b>Costco</b> as the list in A and this address in C. In the new
+            actions, make sure each variable you pick (Reminders, Combined Text, Contents of URL, Text) is the one from the Costco block.
           </p>
           <CopyField label="Costco web address" value={addressFor("Costco")} secret={Boolean(key)} />
           <p className="text-muted">
