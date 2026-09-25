@@ -33,6 +33,8 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const enabled = Boolean(key || enabledSince);
+  const addressFor = (list: string) =>
+    `${endpoint}?list=${encodeURIComponent(list)}${key ? `&key=${encodeURIComponent(key)}` : "&key=YOUR-KEY"}`;
 
   const create = () =>
     start(async () => {
@@ -108,11 +110,10 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
           Each Reminders list gets its own small block of 5 actions. Build the Grocery block first and test it, then add Costco.
           Tip: open this page on your iPhone so you can copy and paste as you go.
         </p>
-        {key ? (
-          <CopyField label="Authorization value (includes your key)" value={`Bearer ${key}`} secret />
-        ) : (
-          <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-            You&apos;ll paste <code>Bearer</code> + your key in step D. {enabled ? "If you no longer have the key, make a new one above." : "Create a key above first."}
+        {!key && (
+          <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+            The addresses below include your key, which is only shown right after it&apos;s made.{" "}
+            {enabled ? "Tap “Make a new key” above to get addresses you can paste." : "Create a key above first."}
           </p>
         )}
 
@@ -129,9 +130,9 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
               <b>Combine Text</b>: it should say <i>Combine Reminders with New Lines</i>.
             </li>
             <li>
-              <b>Get Contents of URL</b>: tap the blue <i>URL</i> placeholder and paste:
+              <b>Get Contents of URL</b>: tap the blue <i>URL</i> placeholder and paste this address (it includes your key):
               <div className="mt-2">
-                <CopyField label="Grocery web address" value={`${endpoint}?list=Grocery`} />
+                <CopyField label="Grocery web address" value={addressFor("Grocery")} secret={Boolean(key)} />
               </div>
             </li>
             <li>
@@ -139,8 +140,7 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
               <ul className="ml-5 mt-1 list-disc space-y-1 text-muted">
                 <li><b className="text-ink">Method</b> → POST</li>
                 <li>
-                  <b className="text-ink">Headers</b> → <i>Add new header</i>. Key: <code>Authorization</code>. Text: paste the{" "}
-                  <i>Authorization value</i> from above (it starts with <code>Bearer</code>).
+                  <b className="text-ink">Headers</b> → none needed. If you added an <i>Authorization</i> header earlier, delete it.
                 </li>
                 <li>
                   <b className="text-ink">Request Body</b> → <b>File</b>. Tap the <i>File</i> field and choose the <b>Combined Text</b> variable.
@@ -163,7 +163,7 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
           </ol>
 
           <p>
-            <b>Check the connection:</b> open the Grocery web address in Safari on your phone. You should see &ldquo;What&apos;s for dinner
+            <b>Check the connection:</b> open the Grocery web address in Safari on your phone (Safari opens it without sending anything). You should see &ldquo;What&apos;s for dinner
             sync is reachable&rdquo;.
           </p>
           <p>
@@ -175,9 +175,9 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
             Add the same actions A–F again below the first block, with <b>Costco</b> as the list in A and this address in C. In the new
             actions, make sure each variable you pick (Reminders, Combined Text, Contents of URL) is the one from the Costco block.
           </p>
-          <CopyField label="Costco web address" value={`${endpoint}?list=Costco`} />
+          <CopyField label="Costco web address" value={addressFor("Costco")} secret={Boolean(key)} />
           <p className="text-muted">
-            For another store, change <code>Costco</code> at the end of the address to that list&apos;s name. Items get that store&apos;s label.
+            For another store, change <code>Costco</code> after <code>list=</code> in the address to that list&apos;s name. Items get that store&apos;s label.
           </p>
         </div>
 

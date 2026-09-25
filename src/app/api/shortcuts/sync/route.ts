@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     bodyBytes: raw.length,
     bodyLines: raw ? raw.split(/\r?\n/).filter((l) => l.trim()).length : 0,
     auth: authHeader ? `${authHeader.startsWith("Bearer ") ? "Bearer" : "no-Bearer-prefix"}, ${authHeader.length} chars` : "missing",
+    keyInAddress: request.nextUrl.searchParams.has("key"),
   });
   let json: unknown = null;
   try {
@@ -51,9 +52,13 @@ export async function POST(request: NextRequest) {
       ? new NextResponse(status < 300 ? message : `Sync failed: ${message}`, { status, headers: { "content-type": "text/plain; charset=utf-8" } })
       : NextResponse.json({ ok: status < 300, message, ...extra }, { status });
 
+  // The key can come in the address (?key=, simplest to set up in Shortcuts), the Authorization header, or a JSON body.
   const auth = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  const key = auth || (json && typeof json === "object" ? String((json as Record<string, unknown>).key ?? "") : "");
-  if (!key) return reply(401, "Missing Shortcuts key. Add it to the Authorization header in the Shortcut.");
+  const key =
+    request.nextUrl.searchParams.get("key")?.trim() ||
+    auth ||
+    (json && typeof json === "object" ? String((json as Record<string, unknown>).key ?? "") : "");
+  if (!key) return reply(401, "Missing Shortcuts key. Use the web address with your key from the setup page.");
 
   const supabase = createSupabase(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   const keyHash = hashShortcutKey(key);
