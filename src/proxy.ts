@@ -6,5 +6,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)"],
+  // /api/shortcuts is called by iPhone Shortcuts with its own key; keep the proxy (which
+  // checks the login session and buffers request bodies) out of that path entirely.
+  matcher: ["/((?!_next/static|_next/image|api/shortcuts|favicon.ico|icon.svg|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)"],
 };

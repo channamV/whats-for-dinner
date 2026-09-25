@@ -153,14 +153,19 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
               Week of Sep 21&rdquo;.)
             </li>
             <li>
-              <b>If</b>: set it to <i>If <b>Contents of URL</b> contains <b>Added</b></i>. Inside the If, add <b>Remove Reminders</b> and choose
-              the <b>Reminders</b> variable from the Find Reminders step. Leave the <i>Otherwise</i> part empty.
+              <b>If</b>: set it to <i>If <b>Contents of URL</b> contains <b>Added</b></i>. Delete any extra empty <i>Condition</i> row. Inside the If, add{" "}
+              <b>Remove Reminders</b>, tap its input and choose <b>Reminders</b> (the result of step A, <i>not</i> Contents of URL). Leave the{" "}
+              <i>Otherwise</i> part empty.
               <span className="block text-muted">
                 This clears them from Reminders only once they&apos;re safely in the app. If the sync fails, nothing is removed.
               </span>
             </li>
           </ol>
 
+          <p>
+            <b>Check the connection:</b> open the Grocery web address in Safari on your phone. You should see &ldquo;What&apos;s for dinner
+            sync is reachable&rdquo;.
+          </p>
           <p>
             <b>Test it:</b> say &ldquo;Hey Siri, add test to my grocery list&rdquo;, tap ▶︎ in the shortcut, and check the grocery list here.
           </p>

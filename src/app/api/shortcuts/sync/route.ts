@@ -20,6 +20,14 @@ export const maxDuration = 60;
  *   starts with "Added" on success, so the Shortcut can show it and check it.
  * - JSON: { "Grocery": "milk\neggs", "Costco": [...] } (or { lists: {...} }); JSON reply.
  */
+/** Opening the address in Safari confirms the phone can reach the sync service. */
+export async function GET() {
+  return new NextResponse(
+    "What's for dinner sync is reachable. Your Shortcut should send a POST to this address (the setup page in Settings shows how).",
+    { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } },
+  );
+}
+
 export async function POST(request: NextRequest) {
   const raw = await request.text().catch(() => "");
   let json: unknown = null;
