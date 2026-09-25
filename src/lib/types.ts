@@ -107,6 +107,8 @@ export type GroceryItem = {
   quantity: number | null;
   unit: string | null;
   category: Category;
+  /** e.g. "Costco" when it should be bought somewhere specific; null = anywhere */
+  store: string | null;
   note: string | null;
   sources: string[];
   checked: boolean;

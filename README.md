@@ -8,6 +8,7 @@ A family web app for recipes, meal plans and grocery lists. It works on phones a
 - **Weekly meal plan.** Plan dinners by day, set each night's table size, and let the AI suggest a week from your own library.
 - **Grocery lists.** Build a list from a meal, a dish, or the whole week. Duplicate ingredients are combined, units are converted, and items are grouped by aisle. Pantry staples are left off unless you ask for them. Check-offs sync live across everyone's phone.
 - **Favourites.** Star any meal or dish, then filter the recipe lists to favourites only. Stars are shared by the household, and meal suggestions lean towards them.
+- **iPhone Reminders & Siri (optional).** Keep saying "Hey Siri, add milk to my Costco list". Before shopping, one Shortcut pulls everything from your Reminders lists into the grocery list, tidied and sorted by aisle, with store lists (like Costco) labelled so you can filter to them. Set up under Settings → iPhone Reminders & Siri; households that don't use it never see it.
 - **Shared with family.** Everyone in a household sees the same recipes, plan and lists. Invite people with a code from Settings.
 
 Stack: Next.js 16 (App Router) · Supabase (Postgres, auth, storage, realtime) · Claude API · Tailwind CSS 4. Deploys to Vercel.
@@ -18,7 +19,7 @@ Stack: Next.js 16 (App Router) · Supabase (Postgres, auth, storage, realtime) �
 
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine).
 2. In the **SQL Editor**, paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This creates the tables, the row-level security rules, the private `recipe-files` storage bucket, and realtime for grocery items.
-   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (`0002_favorites.sql`, `0003_recipe_source_files.sql`, …). Each one is safe to run more than once.
+   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (`0002_favorites.sql`, `0003_recipe_source_files.sql`, `0004_reminders_sync.sql`, …). Each one is safe to run more than once.
    With the Supabase CLI you can run `npx supabase link` and then `npx supabase db push` instead.
 3. **Authentication → URL Configuration**: set **Site URL** to the address the app is live at (e.g. `https://dinner.hannam.pro`). Under **Redirect URLs**, add every address the app runs at, each followed by `/**`, e.g. `https://dinner.hannam.pro/**`, your `*.vercel.app` address, and `http://localhost:3000/**`. Confirmation and password-reset links only go to addresses on this list.
    The built-in email service only sends a few emails an hour. For a private family app you can switch off **Authentication → Sign In / Providers → Email → Confirm email** so new accounts can sign in straight away.

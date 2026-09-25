@@ -20,6 +20,8 @@ const AISLE_LABELS: Record<Category, string> = {
 };
 
 // "Show completed" is remembered on this device; it's a viewing preference, not shared.
+const NO_STORE = "__anywhere__";
+
 const SHOW_COMPLETED_KEY = "wfd:show-completed";
 const prefListeners = new Set<() => void>();
 let memoryPref = false; // used when storage is unavailable (private mode etc.)
@@ -61,6 +63,8 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
   const [items, setItems] = useState(initialItems);
   const [text, setText] = useState("");
   const [category, setCategory] = useState<Category>("produce");
+  // "" = everything, NO_STORE = items that can be bought anywhere, otherwise a store name such as "Costco".
+  const [storeFilter, setStoreFilter] = useState("");
   const [name, setName] = useState(list.name);
   const [, start] = useTransition();
   const showCompleted = useSyncExternalStore(subscribePref, readShowCompleted, () => false);
@@ -133,7 +137,15 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
     setText("");
     const { data } = await supabase
       .from("grocery_items")
-      .insert({ list_id: list.id, household_id: list.household_id, category, position: items.length, ...parsed })
+      .insert({
+        list_id: list.id,
+        household_id: list.household_id,
+        category,
+        // Adding while looking at the Costco items puts the new item on the Costco run too.
+        store: storeFilter && storeFilter !== NO_STORE ? storeFilter : null,
+        position: items.length,
+        ...parsed,
+      })
       .select()
       .single();
     if (data) setItems((cur) => (cur.some((i) => i.id === data.id) ? cur : [...cur, data as GroceryItem]));
@@ -145,7 +157,10 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
     if (ids.length) await supabase.from("grocery_items").delete().in("id", ids);
   }
 
-  const visible = showCompleted ? items : items.filter((i) => !i.checked);
+  const stores = [...new Set(items.map((i) => i.store).filter((x): x is string => Boolean(x)))].sort();
+  const activeStore = storeFilter && (storeFilter === NO_STORE || stores.includes(storeFilter)) ? storeFilter : "";
+  const inStore = (i: GroceryItem) => !activeStore || (activeStore === NO_STORE ? !i.store : i.store === activeStore);
+  const visible = items.filter((i) => inStore(i) && (showCompleted || !i.checked));
   const grouped = CATEGORIES.map((c) => ({
     category: c,
     items: visible.filter((i) => i.category === c).sort((a, b) => Number(a.checked) - Number(b.checked) || a.position - b.position),
@@ -186,12 +201,39 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
       </div>
 
       <form onSubmit={add} className="sticky top-2 z-10 mb-4 flex gap-2 rounded-2xl bg-bg/90 py-1 backdrop-blur md:top-16">
-        <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Add item, e.g. 2 kg potatoes" />
+        <input
+          className="input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={activeStore && activeStore !== NO_STORE ? `Add to ${activeStore}, e.g. paper towels` : "Add item, e.g. 2 kg potatoes"}
+        />
         <select className="input w-auto" value={category} onChange={(e) => setCategory(e.target.value as Category)} aria-label="Aisle">
           {CATEGORIES.map((c) => <option key={c} value={c}>{AISLE_LABELS[c]}</option>)}
         </select>
         <button className="btn-primary shrink-0">Add</button>
       </form>
+
+      {stores.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Filter by store">
+          {[
+            { value: "", label: "Everything", count: remaining },
+            ...stores.map((st) => ({ value: st, label: st, count: items.filter((i) => !i.checked && i.store === st).length })),
+            { value: NO_STORE, label: "Everywhere else", count: items.filter((i) => !i.checked && !i.store).length },
+          ].map((f) => (
+            <button
+              key={f.value || "all"}
+              type="button"
+              aria-pressed={activeStore === f.value}
+              onClick={() => setStoreFilter(f.value)}
+              className={`rounded-full border px-3 py-1 text-sm ${
+                activeStore === f.value ? "border-accent bg-accent-soft font-medium text-accent" : "border-line bg-surface text-muted hover:text-ink"
+              }`}
+            >
+              {f.label} <span className="tabular-nums opacity-70">{f.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {!showCompleted && items.length > 0 && remaining === 0 && (
         <div className="card p-6 text-center">
@@ -217,6 +259,12 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
                       )}
                       {item.name}
                     </span>
+                    {item.store && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 align-[1px] text-[11px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                        {item.store}
+                      </span>
+                    )}
+                    {item.note && <span className="ml-1 text-xs text-muted">· {item.note}</span>}
                     {item.sources.length > 0 && <span className="block truncate text-xs text-muted">{item.sources.join(", ")}</span>}
                   </button>
                   <button className="btn-ghost px-2 py-1" onClick={() => remove(item.id)} aria-label={`Remove ${item.name}`}>

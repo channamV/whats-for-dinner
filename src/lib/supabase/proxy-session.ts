@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// /api/shortcuts is called by iPhone Shortcuts with a Shortcuts key instead of a login.
+const PUBLIC_PATHS = ["/login", "/auth", "/api/shortcuts"];
 
 export async function updateSession(request: NextRequest) {
   // Supabase falls back to the Site URL (e.g. "/?code=...") when the requested

@@ -16,6 +16,8 @@ export default async function SettingsPage() {
     .select("user_id, display_name, role")
     .eq("household_id", household.id)
     .order("created_at");
+  const { data: sync } = await supabase.from("households").select("shortcut_key_created_at").eq("id", household.id).maybeSingle();
+  const shortcutsOn = Boolean(sync?.shortcut_key_created_at);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
   const inviteUrl = `${origin}/welcome?invite=${encodeURIComponent(household.invite_code)}`;
@@ -60,6 +62,18 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="card space-y-2 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold">iPhone Reminders &amp; Siri</h2>
+          <span className={`chip ${shortcutsOn ? "bg-accent-soft text-accent" : ""}`}>{shortcutsOn ? "On" : "Optional"}</span>
+        </div>
+        <p className="text-sm text-muted">
+          Keep adding things with Siri or the Reminders app (including store lists like Costco), then pull them into your grocery list
+          with one tap before you shop.
+        </p>
+        <Link href="/settings/shortcuts" className="btn-secondary">{shortcutsOn ? "Manage" : "Set up"}</Link>
       </section>
 
       <form action={signOut}>

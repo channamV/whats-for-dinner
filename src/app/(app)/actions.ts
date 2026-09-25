@@ -11,6 +11,7 @@ import { suggestPlan, type LibraryItem, type PlanSuggestion } from "@/lib/ai/sug
 import { formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import type { GroceryItem, Ingredient } from "@/lib/types";
 import { removeUnusedFiles } from "@/lib/files";
+import { newShortcutKey } from "@/lib/shortcuts";
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -388,6 +389,7 @@ async function mergeIntoList(listId: string, sources: IngredientSource[], includ
     ],
     baseServings: 1,
     servings: 1,
+    store: item.store,
   }));
   const lines = buildGroceryLines([...existingSources, ...sources], { includePantry });
 
@@ -401,6 +403,7 @@ async function mergeIntoList(listId: string, sources: IngredientSource[], includ
         quantity: l.quantity == null ? null : Math.round(l.quantity * 1000) / 1000,
         unit: l.unit,
         category: l.category,
+        store: l.store,
         sources: [...new Set(l.sources.flatMap((s) => s.split(" · ")))].filter((s) => s !== "Added by hand"),
         position: i,
       })),
@@ -468,5 +471,28 @@ export async function updateHousehold(form: FormData) {
     .eq("id", household.id);
   const displayName = String(form.get("display_name") ?? "").trim() || null;
   await supabase.from("household_members").update({ display_name: displayName }).eq("household_id", household.id).eq("user_id", user.id);
+  refresh();
+}
+
+// ---------------------------------------------------------------------------
+// iPhone Reminders / Siri sync (optional)
+// ---------------------------------------------------------------------------
+
+/** Creates (or replaces) the household's Shortcuts key. The key is returned once and only its hash is kept. */
+export async function createShortcutKey(): Promise<{ key: string } | { error: string }> {
+  const { supabase, household } = await requireHousehold();
+  const { key, hash } = newShortcutKey();
+  const { error } = await supabase
+    .from("households")
+    .update({ shortcut_key_hash: hash, shortcut_key_created_at: new Date().toISOString() })
+    .eq("id", household.id);
+  if (error) return { error: error.message };
+  refresh();
+  return { key };
+}
+
+export async function turnOffShortcuts() {
+  const { supabase, household } = await requireHousehold();
+  await supabase.from("households").update({ shortcut_key_hash: null, shortcut_key_created_at: null }).eq("id", household.id);
   refresh();
 }

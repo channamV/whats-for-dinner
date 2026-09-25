@@ -6,6 +6,7 @@ export type GroceryLine = {
   quantity: number | null;
   unit: string | null;
   category: Category;
+  store: string | null;
   sources: string[];
   pantry: boolean;
 };
@@ -67,6 +68,8 @@ export type IngredientSource = {
   ingredients: Ingredient[];
   baseServings: number;
   servings: number;
+  /** Store these items should be bought at; the same item for different stores stays on separate lines. */
+  store?: string | null;
 };
 
 /**
@@ -82,6 +85,7 @@ export function buildGroceryLines(sources: IngredientSource[], opts: { includePa
     unit: string | null;
     preferredUnit: string;
     category: Category;
+    store: string | null;
     sources: Set<string>;
     pantry: boolean;
   };
@@ -93,7 +97,8 @@ export function buildGroceryLines(sources: IngredientSource[], opts: { includePa
       if (ing.pantry && !opts.includePantry) continue;
       const info = unitInfo(ing.unit);
       const family = info?.family ?? "unknown";
-      const key = `${normalizeName(ing.name)}|${family}|${family === "unknown" ? (ing.unit ?? "").toLowerCase() : ""}`;
+      const store = src.store?.trim() || null;
+      const key = `${normalizeName(ing.name)}|${family}|${family === "unknown" ? (ing.unit ?? "").toLowerCase() : ""}|${(store ?? "").toLowerCase()}`;
       const existing = acc.get(key);
       const baseQty = ing.quantity == null ? null : info ? ing.quantity * info.toBase : ing.quantity;
       if (existing) {
@@ -107,6 +112,7 @@ export function buildGroceryLines(sources: IngredientSource[], opts: { includePa
           unit: ing.unit,
           preferredUnit: info?.canonical ?? ing.unit ?? "",
           category: ing.category,
+          store,
           sources: new Set([src.label]),
           pantry: ing.pantry,
         });
@@ -130,6 +136,7 @@ export function buildGroceryLines(sources: IngredientSource[], opts: { includePa
       quantity,
       unit,
       category: a.category,
+      store: a.store,
       sources: [...a.sources],
       pantry: a.pantry,
     });
