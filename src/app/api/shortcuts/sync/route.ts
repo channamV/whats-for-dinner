@@ -13,11 +13,29 @@ export const maxDuration = 60;
  * iPhone Reminders lists to the household's current grocery list, merging with
  * what's already there. The Shortcuts key is the only credential; the database
  * functions check it and only touch that household's list.
+ *
+ * Two ways to call it:
+ * - Simple (what the setup guide uses): POST the list's items as plain text, one per
+ *   line, to /api/shortcuts/sync?list=Costco. The reply is a plain sentence that
+ *   starts with "Added" on success, so the Shortcut can show it and check it.
+ * - JSON: { "Grocery": "milk\neggs", "Costco": [...] } (or { lists: {...} }); JSON reply.
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null);
-  const auth = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  const key = auth || (body && typeof body === "object" ? String((body as Record<string, unknown>).key ?? "") : "");
+  const raw = await request.text().catch(() => "");
+  let json: unknown = null;
+  try {
+    json = raw.trim().startsWith("{") ? JSON.parse(raw) : null;
+  } catch {}
+  const listParam = request.nextUrl.searchParams.get("list")?.trim() || "Grocery";
+  const body = json ?? { [listParam]: raw };
+  const asText = !json || request.nextUrl.searchParams.get("format") === "text";
+  const reply = (status: number, message: string, extra: Record<string, unknown> = {}) =>
+    asText
+      ? new NextResponse(status < 300 ? message : `Sync failed: ${message}`, { status, headers: { "content-type": "text/plain; charset=utf-8" } })
+      : NextResponse.json({ ok: status < 300, message, ...extra }, { status });
+
+  const auth = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  const key = auth || (json && typeof json === "object" ? String((json as Record<string, unknown>).key ?? "") : "");
   if (!key) return reply(401, "Missing Shortcuts key. Add it to the Authorization header in the Shortcut.");
 
   const supabase = createSupabase(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
@@ -33,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
   const { list_id: listId, list_name: listName, items } = snap as { list_id: string; list_name: string; items: GroceryItem[] };
 
-  if (!lines.length) return reply(200, `Nothing new to add. "${listName}" is up to date.`, { added: 0, list: listName });
+  if (!lines.length) return reply(200, `Nothing new to add from ${listParam}.`, { added: 0, list: listName });
 
   let parsed: ParsedGroceryItem[];
   try {
@@ -81,6 +99,3 @@ export async function POST(request: NextRequest) {
   return reply(200, message, { added: lines.length, list: listName });
 }
 
-function reply(status: number, message: string, extra: Record<string, unknown> = {}) {
-  return NextResponse.json({ ok: status < 300, message, ...extra }, { status });
-}
