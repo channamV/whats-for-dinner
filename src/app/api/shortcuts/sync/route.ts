@@ -30,6 +30,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const raw = await request.text().catch(() => "");
+  // What arrived, for Vercel's logs when a Shortcut misbehaves (never logs the key or the items).
+  const authHeader = request.headers.get("authorization") ?? "";
+  console.log("[shortcuts/sync]", {
+    list: request.nextUrl.searchParams.get("list"),
+    contentType: request.headers.get("content-type"),
+    bodyBytes: raw.length,
+    bodyLines: raw ? raw.split(/\r?\n/).filter((l) => l.trim()).length : 0,
+    auth: authHeader ? `${authHeader.startsWith("Bearer ") ? "Bearer" : "no-Bearer-prefix"}, ${authHeader.length} chars` : "missing",
+  });
   let json: unknown = null;
   try {
     json = raw.trim().startsWith("{") ? JSON.parse(raw) : null;
