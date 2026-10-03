@@ -4,7 +4,7 @@ A family web app for recipes, meal plans and grocery lists. It works on phones a
 
 - **Import recipes from PDFs or photos.** Upload a scanned HelloFresh card, a "Print to PDF" of a web recipe, or photos of both sides of a card. Claude reads it and splits the meal into its separate dishes. For example, the Pesto Mozzarella Piadina card becomes a meal with three dishes: the piadina, the spinach salad, and the balsamic dressing.
 - **Cook whole meals or single dishes.** Each dish is its own recipe, so it can be reused or cooked on its own. Meals group dishes together.
-- **Scale to the table.** Pick "Feeds 1–6" on any recipe. Ingredients and the amounts written in the steps all adjust. Fixed amounts, such as HelloFresh spice packets, stay the same.
+- **Scale to the table.** Pick "Feeds 1–12" (or type a bigger number) on any recipe. Ingredients and the amounts written in the steps all adjust. Fixed amounts, such as HelloFresh spice packets, stay the same.
 - **Weekly meal plan.** Plan dinners by day, set each night's table size, and let the AI suggest a week from your own library.
 - **Grocery lists.** Build a list from a meal, a dish, or the whole week. Duplicate ingredients are combined, units are converted, and items are grouped by aisle. Pantry staples are left off unless you ask for them. Check-offs sync live across everyone's phone.
 - **Favourites.** Star any meal or dish, then filter the recipe lists to favourites only. Stars are shared by the household, and meal suggestions lean towards them.
@@ -19,7 +19,7 @@ Stack: Next.js 16 (App Router) · Supabase (Postgres, auth, storage, realtime) �
 
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine).
 2. In the **SQL Editor**, paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This creates the tables, the row-level security rules, the private `recipe-files` storage bucket, and realtime for grocery items.
-   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (`0002_favorites.sql`, `0003_recipe_source_files.sql`, `0004_reminders_sync.sql`, …). Each one is safe to run more than once.
+   Then run each later file in [`supabase/migrations/`](supabase/migrations/) in number order (`0002_favorites.sql`, `0003_recipe_source_files.sql`, `0004_reminders_sync.sql`, `0005_more_servings.sql`, …). Each one is safe to run more than once.
    With the Supabase CLI you can run `npx supabase link` and then `npx supabase db push` instead.
 3. **Authentication → URL Configuration**: set **Site URL** to the address the app is live at (e.g. `https://dinner.hannam.pro`). Under **Redirect URLs**, add every address the app runs at, each followed by `/**`, e.g. `https://dinner.hannam.pro/**`, your `*.vercel.app` address, and `http://localhost:3000/**`. Confirmation and password-reset links only go to addresses on this list.
    The built-in email service only sends a few emails an hour. For a private family app you can switch off **Authentication → Sign In / Providers → Email → Confirm email** so new accounts can sign in straight away.

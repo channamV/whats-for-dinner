@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CATEGORIES, DISH_ROLES, type Category, type DishRole, type Ingredient, type Step } from "@/lib/types";
 import { PlusIcon, TrashIcon } from "./icons";
+import { MAX_SERVINGS } from "@/lib/servings";
 
 export type DishDraft = {
   id?: string;
@@ -116,7 +117,7 @@ export function DishEditor({
         )}
         <div>
           <label className="label">Serves</label>
-          <input className="input w-20" type="number" min={1} max={24} value={dish.base_servings} onChange={(e) => set("base_servings", Number(e.target.value) || 1)} />
+          <input className="input w-20" type="number" min={1} max={MAX_SERVINGS} value={dish.base_servings} onChange={(e) => set("base_servings", Number(e.target.value) || 1)} />
         </div>
         <div>
           <label className="label">Minutes</label>

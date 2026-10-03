@@ -3,21 +3,19 @@
 import { useTransition } from "react";
 import { removePlanEntry, setPlanCooked, setPlanServings } from "../actions";
 import { TrashIcon } from "@/components/icons";
+import { ServingsSelect } from "@/components/servings-select";
 
 export function EntryControls({ id, servings, cooked }: { id: string; servings: number; cooked: boolean }) {
   const [pending, start] = useTransition();
   return (
     <div className={`flex items-center gap-1 ${pending ? "opacity-50" : ""}`}>
-      <select
-        className="input w-auto py-1 pl-2 pr-6 text-xs"
-        value={servings}
-        onChange={(e) => start(() => setPlanServings(id, Number(e.target.value)))}
-        aria-label="Servings"
-      >
-        {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
-          <option key={n} value={n}>Feeds {n}</option>
-        ))}
-      </select>
+      <ServingsSelect
+        key={servings}
+        defaultValue={servings}
+        prefix="Feeds "
+        ariaLabel="Feeds how many people"
+        onChange={(n) => start(() => setPlanServings(id, n))}
+      />
       <button
         className={`btn px-2 py-1 text-xs ${cooked ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2"}`}
         onClick={() => start(() => setPlanCooked(id, !cooked))}

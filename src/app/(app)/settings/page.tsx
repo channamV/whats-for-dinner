@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { InviteActions } from "@/components/invite-actions";
+import { ServingsSelect } from "@/components/servings-select";
 import { PageHeader } from "@/components/page-header";
 import { requireHousehold } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
@@ -35,9 +36,7 @@ export default async function SettingsPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Usual table size</label>
-            <select className="input" name="servings" defaultValue={household.default_servings}>
-              {[1, 2, 3, 4, 5, 6, 8].map((n) => <option key={n} value={n}>Feeds {n}</option>)}
-            </select>
+            <ServingsSelect name="servings" defaultValue={household.default_servings} prefix="Feeds " ariaLabel="Usual table size" />
           </div>
           <div>
             <label className="label">Your name</label>

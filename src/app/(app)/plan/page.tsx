@@ -7,6 +7,7 @@ import { addDays, formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import { requireHousehold } from "@/lib/session";
 import { addToPlan, groceryListFromPlan } from "../actions";
 import { EntryControls } from "./entry-controls";
+import { ServingsSelect } from "@/components/servings-select";
 import { SuggestPanel } from "./suggest-panel";
 
 export const metadata: Metadata = { title: "Meal plan" };
@@ -108,9 +109,7 @@ export default async function PlanPage(props: PageProps<"/plan">) {
                   placeholder={day.length ? "Add another… (type anything)" : "What's for dinner? Type or pick a recipe"}
                   aria-label={`Add to ${formatDay(date, { weekday: "long" })}`}
                 />
-                <select name="servings" className="input w-auto py-1.5 text-sm" defaultValue={household.default_servings}>
-                  {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
+                <ServingsSelect name="servings" defaultValue={household.default_servings} prefix="Feeds " />
                 <button className="btn-secondary py-1.5">Add</button>
               </form>
             </li>

@@ -12,6 +12,7 @@ import { formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import type { GroceryItem, Ingredient } from "@/lib/types";
 import { removeUnusedFiles } from "@/lib/files";
 import { newShortcutKey } from "@/lib/shortcuts";
+import { MAX_SERVINGS, isServings } from "@/lib/servings";
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -25,7 +26,7 @@ const DishInput = DishSchema.extend({
   id: z.string().uuid().optional(),
   notes: z.string().nullable().optional(),
   prep_minutes: z.number().int().nullable().optional(),
-  base_servings: z.number().int().min(1).max(24),
+  base_servings: z.number().int().min(1).max(MAX_SERVINGS),
 });
 export type DishInput = z.infer<typeof DishInput>;
 
@@ -259,7 +260,7 @@ export async function createMealFromDishes(form: FormData) {
 
 function servingsFrom(form: FormData, fallback: number) {
   const n = Number(form.get("servings"));
-  return Number.isInteger(n) && n >= 1 && n <= 24 ? n : fallback;
+  return isServings(n) ? n : fallback;
 }
 
 export async function addToPlan(form: FormData) {
@@ -308,7 +309,7 @@ export async function setPlanCooked(id: string, cooked: boolean) {
 
 export async function setPlanServings(id: string, servings: number) {
   const { supabase } = await requireHousehold();
-  if (!Number.isInteger(servings) || servings < 1 || servings > 24) return;
+  if (!isServings(servings)) return;
   await supabase.from("meal_plan_entries").update({ servings }).eq("id", id);
   refresh();
 }

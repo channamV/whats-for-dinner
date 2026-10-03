@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CATEGORIES, DISH_ROLES } from "../types";
+import { MAX_SERVINGS } from "../servings";
 
 export const IngredientSchema = z.object({
   name: z.string().describe("Ingredient name as a shopper would look for it, e.g. 'Roma Tomato'"),
@@ -69,7 +70,7 @@ export function normalizeImport(raw: AiImport): ImportResult {
     dishes: raw.dishes.map((d) => ({
       ...d,
       role: oneOf(DISH_ROLES, d.role, "other"),
-      base_servings: Math.min(24, Math.max(1, Math.round(d.base_servings) || 2)),
+      base_servings: Math.min(MAX_SERVINGS, Math.max(1, Math.round(d.base_servings) || 2)),
       ingredients: d.ingredients.map((i) => ({ ...i, category: oneOf(CATEGORIES, i.category, "other") })),
     })),
   };
