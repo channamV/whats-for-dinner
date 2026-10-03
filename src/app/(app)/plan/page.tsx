@@ -75,13 +75,21 @@ export default async function PlanPage(props: PageProps<"/plan">) {
                 <ul className="mb-3 space-y-2">
                   {day.map((e) => {
                     const title = e.meal?.title ?? e.recipe?.title ?? e.note;
+                    const typed = !e.meal && !e.recipe;
                     const href = e.meal ? `/meals/${e.meal.id}?serves=${e.servings}` : e.recipe ? `/recipes/${e.recipe.id}?serves=${e.servings}` : null;
                     return (
                       <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2/60 px-3 py-2">
                         {href ? (
                           <Link href={href} className={`font-medium hover:text-accent ${e.cooked ? "text-muted line-through" : ""}`}>{title}</Link>
                         ) : (
-                          <span className="font-medium">{title}</span>
+                          <span className="flex flex-wrap items-baseline gap-x-2">
+                            <span className={`font-medium ${e.cooked ? "text-muted line-through" : ""}`}>{title}</span>
+                            {typed && title && (
+                              <Link href={`/recipes/new?title=${encodeURIComponent(title)}`} className="text-xs text-accent">
+                                + Save as dish
+                              </Link>
+                            )}
+                          </span>
                         )}
                         <EntryControls id={e.id} servings={e.servings} cooked={e.cooked} />
                       </li>
@@ -91,20 +99,15 @@ export default async function PlanPage(props: PageProps<"/plan">) {
               )}
               <form action={addToPlan} className="flex flex-wrap gap-2">
                 <input type="hidden" name="date" value={date} />
-                <select name="target" className="input min-w-0 flex-1 py-1.5 text-sm" defaultValue="">
-                  <option value="">{day.length ? "Add another…" : "What's for dinner?"}</option>
-                  {meals.length > 0 && (
-                    <optgroup label="Meals">
-                      {meals.map((m) => <option key={m.id} value={`meal:${m.id}`}>{m.favorite ? "★ " : ""}{m.title}</option>)}
-                    </optgroup>
-                  )}
-                  {recipes.length > 0 && (
-                    <optgroup label="Dishes">
-                      {recipes.map((r) => <option key={r.id} value={`recipe:${r.id}`}>{r.favorite ? "★ " : ""}{r.title}</option>)}
-                    </optgroup>
-                  )}
-                </select>
-                <input name="note" className="input w-32 py-1.5 text-sm" placeholder="or a note" />
+                <input
+                  name="what"
+                  list="plan-library"
+                  required
+                  autoComplete="off"
+                  className="input min-w-0 flex-1 py-1.5 text-sm"
+                  placeholder={day.length ? "Add another… (type anything)" : "What's for dinner? Type or pick a recipe"}
+                  aria-label={`Add to ${formatDay(date, { weekday: "long" })}`}
+                />
                 <select name="servings" className="input w-auto py-1.5 text-sm" defaultValue={household.default_servings}>
                   {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
@@ -114,6 +117,18 @@ export default async function PlanPage(props: PageProps<"/plan">) {
           );
         })}
       </ol>
+
+      {/* Suggestions for the "What's for dinner?" boxes; anything else typed is kept as written. */}
+      <datalist id="plan-library">
+        {meals.map((m) => (
+          <option key={m.id} value={m.title} label={`Complete meal${m.favorite ? " ★" : ""}`} />
+        ))}
+        {recipes
+          .filter((r) => !meals.some((m) => m.title.toLowerCase() === r.title.toLowerCase()))
+          .map((r) => (
+            <option key={r.id} value={r.title} label={`Dish${r.favorite ? " ★" : ""}`} />
+          ))}
+      </datalist>
 
       <form action={groceryListFromPlan} className="card mt-5 space-y-3 p-4">
         <input type="hidden" name="from" value={dates[0]} />

@@ -266,9 +266,21 @@ export async function addToPlan(form: FormData) {
   const { supabase, household } = await requireHousehold();
   const date = String(form.get("date") ?? "");
   if (!isIsoDate(date)) return;
-  const target = String(form.get("target") ?? ""); // "meal:<id>" | "recipe:<id>" | ""
-  const [kind, id] = target.split(":");
-  const note = String(form.get("note") ?? "").trim() || null;
+  let [kind, id] = String(form.get("target") ?? "").split(":"); // "meal:<id>" | "recipe:<id>" | ""
+  let note = String(form.get("note") ?? "").trim() || null;
+
+  // Free typing: link it to a saved meal or dish with the same name, otherwise keep it as typed
+  // ("Pizza night", "Leftovers", a recipe you haven't added yet).
+  const what = String(form.get("what") ?? "").trim().slice(0, 200);
+  if (what && !id) {
+    const [{ data: meal }, { data: recipe }] = await Promise.all([
+      supabase.from("meals").select("id").ilike("title", what.replace(/[%_\\]/g, "\\$&")).limit(1).maybeSingle(),
+      supabase.from("recipes").select("id").ilike("title", what.replace(/[%_\\]/g, "\\$&")).limit(1).maybeSingle(),
+    ]);
+    if (meal) [kind, id] = ["meal", meal.id];
+    else if (recipe) [kind, id] = ["recipe", recipe.id];
+    else note = what;
+  }
   if (!id && !note) return;
   await supabase.from("meal_plan_entries").insert({
     household_id: household.id,

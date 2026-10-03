@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { saveRecipe } from "@/app/(app)/actions";
 import { DishEditor, emptyDish, type DishDraft } from "./dish-editor";
 
-export function RecipeForm({ initial, mealId }: { initial?: DishDraft; mealId?: string }) {
-  const [dish, setDish] = useState<DishDraft>(initial ?? emptyDish());
+export function RecipeForm({ initial, mealId, initialTitle }: { initial?: DishDraft; mealId?: string; initialTitle?: string }) {
+  const [dish, setDish] = useState<DishDraft>(initial ?? { ...emptyDish(), title: initialTitle ?? "" });
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
