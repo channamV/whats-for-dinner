@@ -36,7 +36,7 @@ export function SuggestPanel({ weekStart, dayLabels }: { weekStart: string; dayL
   return (
     <details className="card p-4" open={Boolean(result)}>
       <summary className="flex cursor-pointer items-center gap-2 font-semibold">
-        <SparkleIcon className="h-5 w-5 text-accent" /> Suggest dinners for this week
+        <SparkleIcon className="h-5 w-5 text-accent" /> Suggest dinners for these 7 days
       </summary>
       <div className="mt-3 space-y-3">
         <input

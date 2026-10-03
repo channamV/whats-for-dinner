@@ -21,12 +21,7 @@ export function addDays(iso: string, days: number): string {
   return toIso(d);
 }
 
-/** Monday of the week containing the date. */
-export function weekStart(iso: string): string {
-  const dow = toDate(iso).getUTCDay(); // 0 = Sunday
-  return addDays(iso, dow === 0 ? -6 : 1 - dow);
-}
-
+/** The 7 days starting on `start`, which can be any day of the week. */
 export function weekDates(start: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }

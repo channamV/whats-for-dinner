@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { CartIcon } from "@/components/icons";
 import { getLists, getPlan, listMeals, listRecipes } from "@/lib/data";
-import { addDays, formatDay, isIsoDate, today, weekDates, weekStart } from "@/lib/dates";
+import { addDays, formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import { requireHousehold } from "@/lib/session";
 import { addToPlan, groceryListFromPlan } from "../actions";
 import { EntryControls } from "./entry-controls";
@@ -14,7 +14,10 @@ export const metadata: Metadata = { title: "Meal plan" };
 export default async function PlanPage(props: PageProps<"/plan">) {
   const sp = await props.searchParams;
   const now = today();
-  const start = weekStart(isIsoDate(sp.week) ? sp.week : now);
+  // The plan shows 7 days from any start day (default today). ?week= is the older name for ?start=.
+  const requested = isIsoDate(sp.start) ? sp.start : isIsoDate(sp.week) ? sp.week : null;
+  const start = requested ?? now;
+  const go = (days: number) => `/plan?start=${addDays(start, days)}`;
   const dates = weekDates(start);
   const { supabase, household } = await requireHousehold();
   const [entries, meals, recipes, lists] = await Promise.all([
@@ -29,12 +32,24 @@ export default async function PlanPage(props: PageProps<"/plan">) {
     <>
       <PageHeader
         title="Meal plan"
-        subtitle={`${formatDay(dates[0], { month: "long", day: "numeric" })} – ${formatDay(dates[6], { month: "long", day: "numeric" })}`}
+        subtitle={`${formatDay(dates[0])} – ${formatDay(dates[6])}`}
         actions={
-          <div className="flex gap-1">
-            <Link href={`/plan?week=${addDays(start, -7)}`} className="btn-secondary px-3">‹ Prev</Link>
-            <Link href="/plan" className="btn-secondary px-3">This week</Link>
-            <Link href={`/plan?week=${addDays(start, 7)}`} className="btn-secondary px-3">Next ›</Link>
+          <div className="flex flex-wrap items-center gap-1">
+            <Link href={go(-7)} className="btn-secondary px-3" title="Back a week" aria-label="Back a week">«</Link>
+            <Link href={go(-1)} className="btn-secondary px-3" title="Back a day" aria-label="Back a day">‹</Link>
+            <Link href="/plan" className={`btn-secondary px-3 ${start === now ? "border-accent text-accent" : ""}`}>Today</Link>
+            <Link href={go(1)} className="btn-secondary px-3" title="Forward a day" aria-label="Forward a day">›</Link>
+            <Link href={go(7)} className="btn-secondary px-3" title="Forward a week" aria-label="Forward a week">»</Link>
+            <form action="/plan" className="flex items-center gap-1">
+              <input
+                type="date"
+                name="start"
+                defaultValue={start}
+                aria-label="Start the plan on"
+                className="input w-auto py-1.5 text-sm"
+              />
+              <button className="btn-secondary px-3">Go</button>
+            </form>
           </div>
         }
       />
@@ -103,7 +118,7 @@ export default async function PlanPage(props: PageProps<"/plan">) {
       <form action={groceryListFromPlan} className="card mt-5 space-y-3 p-4">
         <input type="hidden" name="from" value={dates[0]} />
         <input type="hidden" name="to" value={dates[6]} />
-        <p className="flex items-center gap-2 font-semibold"><CartIcon className="h-5 w-5 text-accent" /> Grocery list for this week</p>
+        <p className="flex items-center gap-2 font-semibold"><CartIcon className="h-5 w-5 text-accent" /> Grocery list for these 7 days</p>
         <p className="text-sm text-muted">Adds everything not yet cooked, scaled to each night&apos;s table size and combined.</p>
         <div className="flex flex-wrap gap-2">
           <select name="list_id" className="input w-auto flex-1" defaultValue="new">

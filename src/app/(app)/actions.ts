@@ -279,7 +279,7 @@ export async function addToPlan(form: FormData) {
     note,
   });
   refresh();
-  if (form.get("redirect") === "plan") redirect(`/plan?week=${date}`);
+  if (form.get("redirect") === "plan") redirect(`/plan?start=${date}`);
 }
 
 export async function removePlanEntry(id: string) {
