@@ -69,3 +69,15 @@ describe("store-aware merging", () => {
     expect(lines.find((l) => l.store === "Costco")).toMatchObject({ quantity: 2 });
   });
 });
+
+describe("general list names are never stores", () => {
+  it("treats Grocery/Groceries/Shopping in any case as anywhere", async () => {
+    const { storeForList: s } = await import("./stores");
+    expect(s("Grocery")).toBeNull();
+    expect(s(" GROCERIES ")).toBeNull();
+    expect(s("Shopping list")).toBeNull();
+    expect(s("")).toBeNull();
+    expect(s(null)).toBeNull();
+    expect(s("Costco")).toBe("Costco");
+  });
+});

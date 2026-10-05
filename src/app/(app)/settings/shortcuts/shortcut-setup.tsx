@@ -35,7 +35,8 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
   const enabled = Boolean(key || enabledSince);
   const keyParam = key ? `&key=${encodeURIComponent(key)}` : "&key=YOUR-KEY";
   const addressFor = (list: string) => `${endpoint}?list=${encodeURIComponent(list)}${keyParam}`;
-  const exportAddressFor = (list: string) => `${exportEndpoint}?list=${encodeURIComponent(list)}${keyParam}`;
+  const exportAddressFor = (list: string) => `${exportEndpoint}?list=${encodeURIComponent(list)}${keyParam}&send=1`;
+  const previewAddressFor = (list: string) => `${exportEndpoint}?list=${encodeURIComponent(list)}${keyParam}`;
 
   const create = () =>
     start(async () => {
@@ -127,8 +128,8 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
           <h3 className="pt-1 font-semibold">Groceries block</h3>
           <ol className="ml-5 list-[upper-alpha] space-y-3">
             <li>
-              <b>Get Contents of URL</b>: paste this address. Tap the arrow to show more and set <b>Method</b> to <b>POST</b> (nothing
-              else: no headers, no body).
+              <b>Get Contents of URL</b>: paste this address. Leave everything else as it is (it ends in <code>&amp;send=1</code>, which
+              tells the app to send for real).
               <div className="mt-2">
                 <CopyField label="Send to Groceries address" value={exportAddressFor("Grocery")} secret={Boolean(key)} />
               </div>
@@ -158,9 +159,9 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
             Optional: after <i>End If</i>, add <b>Show Notification</b> &ldquo;Groceries sent to Reminders&rdquo;.
           </p>
           <p>
-            <b>Preview first:</b> opening the address in Safari shows what would be sent, or why nothing would be, without ticking
-            anything. Only the Shortcut (POST) sends and ticks items off. If the address ends in <code>key=YOUR-KEY</code>, make a new key
-            above and copy it again.
+            <b>Preview first:</b> open this preview address in Safari to see what would be sent, or why nothing would be. It
+            doesn&apos;t tick anything. Don&apos;t open the Shortcut&apos;s address (the one ending in <code>send=1</code>) in Safari: that one
+            sends and ticks items off.
           </p>
           <h3 className="pt-1 font-semibold">Costco block (and any other store)</h3>
           <p className="text-muted">
@@ -168,6 +169,9 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
             Costco actions.
           </p>
           <CopyField label="Send to Costco address" value={exportAddressFor("Costco")} secret={Boolean(key)} />
+          <p className="text-muted">Preview addresses for Safari (they don&apos;t send anything):</p>
+          <CopyField label="Preview Groceries" value={previewAddressFor("Grocery")} secret={Boolean(key)} />
+          <CopyField label="Preview Costco" value={previewAddressFor("Costco")} secret={Boolean(key)} />
           <p className="text-muted">
             Items ticked by mistake are still in the app under <b>Show completed</b>; untick them there to put them back.
           </p>

@@ -6,6 +6,7 @@ import { formatQuantity, parseQuantity } from "@/lib/quantity";
 import { CATEGORIES, type Category, type GroceryItem, type GroceryList } from "@/lib/types";
 import { PencilIcon, TrashIcon } from "@/components/icons";
 import { fallbackParse } from "@/lib/grocery-parse";
+import { storeForList } from "@/lib/stores";
 import { autoCategorizeItem, deleteList, rememberCategory, updateList } from "../../actions";
 
 const AISLE_LABELS: Record<Category, string> = {
@@ -370,7 +371,7 @@ function ItemEditor({
           quantity: qty.trim() ? parseQuantity(qty) : null,
           unit: unit.trim() || null,
           category: aisle,
-          store: store.trim() || null,
+          store: storeForList(store),
           note: note.trim() || null,
         });
       }}

@@ -12,15 +12,17 @@ import { formatQuantity } from "@/lib/quantity";
  *   ?list=Costco (any other name)           → items marked for that store
  *   ?list=all                               → everything
  *
- * POST sends the items and ticks them off in the app, so they're never sent twice.
- * GET (e.g. opening the address in Safari) only previews and changes nothing.
+ * Sending (POST, or an address ending in &send=1) ticks the items off in the app, so
+ * they're never sent twice. Without either (e.g. opening the preview address in
+ * Safari) it only previews and changes nothing.
  *
  * A POST reply is only ever item lines or empty: on any problem it's empty with an
  * error status, so the Shortcut's single "If Text has any value" check can never turn
  * an error message into a reminder. The GET preview shows the actual reason instead.
  */
 export async function GET(request: NextRequest) {
-  return exportItems(request, false);
+  // &send=1 lets the Shortcut send with a plain GET, so there's no Method setting to get wrong.
+  return exportItems(request, request.nextUrl.searchParams.get("send") === "1");
 }
 
 export async function POST(request: NextRequest) {

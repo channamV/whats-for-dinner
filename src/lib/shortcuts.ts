@@ -10,12 +10,9 @@ export function hashShortcutKey(key: string) {
   return createHash("sha256").update(key.trim()).digest("hex");
 }
 
-/** Reminders lists called "Grocery", "Groceries", "Shopping"… are for anywhere; any other list name is a store. */
-export function storeForList(listName: string): string | null {
-  const name = listName.trim();
-  if (!name || /^(my\s+)?(grocery|groceries|grocery list|shopping|shopping list|food|list|items)$/i.test(name)) return null;
-  return name.slice(0, 40);
-}
+import { storeForList } from "./stores";
+
+export { storeForList };
 
 export type ReminderLine = { text: string; store: string | null };
 
