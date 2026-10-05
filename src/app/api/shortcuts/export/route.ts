@@ -14,6 +14,10 @@ import { formatQuantity } from "@/lib/quantity";
  *
  * POST sends the items and ticks them off in the app, so they're never sent twice.
  * GET (e.g. opening the address in Safari) only previews and changes nothing.
+ *
+ * A POST reply is only ever item lines or empty: on any problem it's empty with an
+ * error status, so the Shortcut's single "If Text has any value" check can never turn
+ * an error message into a reminder. The GET preview shows the actual reason instead.
  */
 export async function GET(request: NextRequest) {
   return exportItems(request, false);
@@ -26,10 +30,17 @@ export async function POST(request: NextRequest) {
 async function exportItems(request: NextRequest, commit: boolean) {
   const text = (body: string, status = 200) =>
     new NextResponse(body, { status, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  // Errors: explain in the Safari preview, stay empty for the Shortcut (see above).
+  const fail = (reason: string, status: number) => {
+    console.log("[shortcuts/export] failed", { status, reason, commit });
+    return text(commit ? "" : `Not sent: ${reason}`, status);
+  };
 
   const key =
     request.nextUrl.searchParams.get("key")?.trim() || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-  if (!key) return text("Sync failed: Missing Shortcuts key. Use the web address with your key from the setup page.", 401);
+  if (!key || key === "YOUR-KEY") {
+    return fail("the address has no Shortcuts key. In Settings → iPhone Reminders & Siri, tap “Make a new key” and copy the address again.", 401);
+  }
 
   const listName = request.nextUrl.searchParams.get("list")?.trim() || "Grocery";
   const store = listName.toLowerCase() === "all" ? "*" : storeForList(listName);
@@ -42,8 +53,8 @@ async function exportItems(request: NextRequest, commit: boolean) {
   });
   if (error) {
     return error.message.includes("invalid shortcuts key")
-      ? text("Sync failed: That Shortcuts key isn't valid any more. Create a new one in What's for dinner → Settings.", 401)
-      : text("Sync failed: Couldn't reach your grocery list. Try again in a minute.", 500);
+      ? fail("that Shortcuts key isn't valid any more. Make a new one in Settings → iPhone Reminders & Siri and copy the address again.", 401)
+      : fail("couldn't reach your grocery list. Try again in a minute.", 500);
   }
 
   const rows = (data ?? []) as { name: string; quantity: number | null; unit: string | null; note: string | null; store: string | null }[];

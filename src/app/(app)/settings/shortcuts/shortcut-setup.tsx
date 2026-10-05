@@ -137,9 +137,9 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
               <b>Text</b>: add the <i>Text</i> action, tap inside it, choose <i>Select Variable</i> and tap <b>Contents of URL</b>.
             </li>
             <li>
-              <b>If</b>: set the top to <i>All</i> are true, with two conditions: <i><b>Text</b> has any value</i>, and{" "}
-              <i><b>Text</b> does not begin with</i> <code>Sync failed</code>. This skips the rest when there&apos;s nothing to send or
-              something went wrong.
+              <b>If</b>: tap <i>Condition</i> (it may say <i>is anything</i>) and choose <b>has any value</b>, so it reads{" "}
+              <i>If <b>Text</b> has any value</i>. One condition is all it needs: the app replies with nothing when there&apos;s nothing to
+              send or something went wrong.
             </li>
             <li>
               Inside the If, add <b>Split Text</b>: <i>Split <b>Text</b> by <b>New Lines</b></i>.
@@ -150,16 +150,17 @@ export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endp
               <b>Groceries</b> list.
             </li>
             <li>
-              In the If&apos;s <b>Otherwise</b> part, add <b>Show Notification</b> with <b>Text</b>, so you see the reason if it didn&apos;t
-              send (it&apos;s blank when there was simply nothing to send).
+              In the If&apos;s <b>Otherwise</b> part, add <b>Show Notification</b> and type: <i>Nothing sent. If you expected items, open
+              the address in Safari to see why.</i>
             </li>
           </ol>
           <p>
             Optional: after <i>End If</i>, add <b>Show Notification</b> &ldquo;Groceries sent to Reminders&rdquo;.
           </p>
           <p>
-            <b>Preview first:</b> opening the address in Safari shows what would be sent without ticking anything. Only the Shortcut
-            (POST) sends and ticks items off.
+            <b>Preview first:</b> opening the address in Safari shows what would be sent, or why nothing would be, without ticking
+            anything. Only the Shortcut (POST) sends and ticks items off. If the address ends in <code>key=YOUR-KEY</code>, make a new key
+            above and copy it again.
           </p>
           <h3 className="pt-1 font-semibold">Costco block (and any other store)</h3>
           <p className="text-muted">
