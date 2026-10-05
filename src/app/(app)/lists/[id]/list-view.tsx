@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransiti
 import { createClient } from "@/lib/supabase/client";
 import { formatQuantity, parseQuantity } from "@/lib/quantity";
 import { CATEGORIES, type Category, type GroceryItem, type GroceryList } from "@/lib/types";
-import { TrashIcon } from "@/components/icons";
-import { deleteList, updateList } from "../../actions";
+import { PencilIcon, TrashIcon } from "@/components/icons";
+import { fallbackParse } from "@/lib/grocery-parse";
+import { autoCategorizeItem, deleteList, rememberCategory, updateList } from "../../actions";
 
 const AISLE_LABELS: Record<Category, string> = {
   produce: "Produce",
@@ -62,7 +63,7 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState(initialItems);
   const [text, setText] = useState("");
-  const [category, setCategory] = useState<Category>("produce");
+  const [editing, setEditing] = useState<string | null>(null);
   // "" = everything, NO_STORE = items that can be bought anywhere, otherwise a store name such as "Costco".
   const [storeFilter, setStoreFilter] = useState("");
   const [name, setName] = useState(list.name);
@@ -135,6 +136,9 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
     if (!text.trim()) return;
     const parsed = parseLine(text);
     setText("");
+    // Quick guess from keywords so the item shows up straight away; the server then
+    // applies what this household used before for it, or asks the AI once.
+    const category = sameItemCategory(items, parsed.name) ?? fallbackParse(parsed.name).category;
     const { data } = await supabase
       .from("grocery_items")
       .insert({
@@ -148,7 +152,20 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
       })
       .select()
       .single();
-    if (data) setItems((cur) => (cur.some((i) => i.id === data.id) ? cur : [...cur, data as GroceryItem]));
+    if (!data) return;
+    setItems((cur) => (cur.some((i) => i.id === data.id) ? cur : [...cur, data as GroceryItem]));
+    const better = await autoCategorizeItem(data.id).catch(() => null);
+    if (better) setItems((cur) => cur.map((i) => (i.id === data.id ? { ...i, category: better.category } : i)));
+  }
+
+  async function saveEdit(item: GroceryItem, patch: Partial<GroceryItem>) {
+    setEditing(null);
+    setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
+    await supabase.from("grocery_items").update(patch).eq("id", item.id);
+    // Moving an item to another aisle teaches the list where it goes next time.
+    if (patch.category && (patch.category !== item.category || patch.name !== item.name)) {
+      await rememberCategory(patch.name ?? item.name, patch.category).catch(() => {});
+    }
   }
 
   async function clearChecked() {
@@ -207,9 +224,6 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
           onChange={(e) => setText(e.target.value)}
           placeholder={activeStore && activeStore !== NO_STORE ? `Add to ${activeStore}, e.g. paper towels` : "Add item, e.g. 2 kg potatoes"}
         />
-        <select className="input w-auto" value={category} onChange={(e) => setCategory(e.target.value as Category)} aria-label="Aisle">
-          {CATEGORIES.map((c) => <option key={c} value={c}>{AISLE_LABELS[c]}</option>)}
-        </select>
         <button className="btn-primary shrink-0">Add</button>
       </form>
 
@@ -250,26 +264,44 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
             <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{AISLE_LABELS[g.category]}</h2>
             <ul className="card divide-y divide-line">
               {g.items.map((item) => (
-                <li key={item.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <input type="checkbox" className="h-5 w-5 shrink-0 accent-[var(--accent)]" checked={item.checked} onChange={() => toggle(item)} aria-label={item.name} />
-                  <button className="min-w-0 flex-1 text-left" onClick={() => toggle(item)}>
-                    <span className={item.checked ? "text-muted line-through" : ""}>
-                      {item.quantity != null && (
-                        <span className="font-medium tabular-nums">{formatQuantity(Number(item.quantity), item.unit)}{item.unit ? ` ${item.unit}` : ""} </span>
-                      )}
-                      {item.name}
-                    </span>
-                    {item.store && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 align-[1px] text-[11px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-                        {item.store}
-                      </span>
-                    )}
-                    {item.note && <span className="ml-1 text-xs text-muted">· {item.note}</span>}
-                    {item.sources.length > 0 && <span className="block truncate text-xs text-muted">{item.sources.join(", ")}</span>}
-                  </button>
-                  <button className="btn-ghost px-2 py-1" onClick={() => remove(item.id)} aria-label={`Remove ${item.name}`}>
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                <li key={item.id} className="flex items-center gap-1 py-1 pl-1 pr-2">
+                  {editing === item.id ? (
+                    <ItemEditor item={item} stores={stores} onCancel={() => setEditing(null)} onSave={(patch) => saveEdit(item, patch)} />
+                  ) : (
+                    <>
+                      {/* Only the checkbox ticks an item (with a finger-sized target); the text doesn't. */}
+                      <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg hover:bg-surface-2">
+                        <input
+                          type="checkbox"
+                          className="h-5 w-5 accent-[var(--accent)]"
+                          checked={item.checked}
+                          onChange={() => toggle(item)}
+                          aria-label={`Tick off ${item.name}`}
+                        />
+                      </label>
+                      <div className="min-w-0 flex-1 py-1.5">
+                        <span className={item.checked ? "text-muted line-through" : ""}>
+                          {item.quantity != null && (
+                            <span className="font-medium tabular-nums">{formatQuantity(Number(item.quantity), item.unit)}{item.unit ? ` ${item.unit}` : ""} </span>
+                          )}
+                          {item.name}
+                        </span>
+                        {item.store && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 align-[1px] text-[11px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                            {item.store}
+                          </span>
+                        )}
+                        {item.note && <span className="ml-1 text-xs text-muted">· {item.note}</span>}
+                        {item.sources.length > 0 && <span className="block truncate text-xs text-muted">{item.sources.join(", ")}</span>}
+                      </div>
+                      <button className="btn-ghost px-2 py-2" onClick={() => setEditing(item.id)} aria-label={`Edit ${item.name}`} title="Edit">
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button className="btn-ghost px-2 py-2" onClick={() => remove(item.id)} aria-label={`Remove ${item.name}`} title="Remove">
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -300,5 +332,72 @@ export function ListView({ list, initialItems }: { list: GroceryList; initialIte
         </div>
       )}
     </div>
+  );
+}
+
+/** If the same item is already on this list, reuse its aisle (it may have been corrected by hand). */
+function sameItemCategory(items: GroceryItem[], name: string): Category | null {
+  const key = name.trim().toLowerCase().replace(/s$/, "");
+  return items.find((i) => i.name.trim().toLowerCase().replace(/s$/, "") === key)?.category ?? null;
+}
+
+function ItemEditor({
+  item,
+  stores,
+  onSave,
+  onCancel,
+}: {
+  item: GroceryItem;
+  stores: string[];
+  onSave: (patch: Partial<GroceryItem>) => void;
+  onCancel: () => void;
+}) {
+  const [qty, setQty] = useState(item.quantity == null ? "" : formatQuantity(Number(item.quantity), item.unit));
+  const [unit, setUnit] = useState(item.unit ?? "");
+  const [itemName, setItemName] = useState(item.name);
+  const [aisle, setAisle] = useState<Category>(item.category);
+  const [store, setStore] = useState(item.store ?? "");
+  const [note, setNote] = useState(item.note ?? "");
+
+  return (
+    <form
+      className="w-full space-y-2 p-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!itemName.trim()) return;
+        onSave({
+          name: itemName.trim(),
+          quantity: qty.trim() ? parseQuantity(qty) : null,
+          unit: unit.trim() || null,
+          category: aisle,
+          store: store.trim() || null,
+          note: note.trim() || null,
+        });
+      }}
+    >
+      <div className="grid grid-cols-[4.5rem_4.5rem_1fr] gap-2">
+        <input className="input px-2" inputMode="decimal" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="Quantity" />
+        <input className="input px-2" placeholder="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} aria-label="Unit" />
+        <input className="input" value={itemName} onChange={(e) => setItemName(e.target.value)} aria-label="Item" required autoFocus />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <select className="input" value={aisle} onChange={(e) => setAisle(e.target.value as Category)} aria-label="Aisle">
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{AISLE_LABELS[c]}</option>
+          ))}
+        </select>
+        <input className="input" list="item-stores" placeholder="Store (any)" value={store} onChange={(e) => setStore(e.target.value)} aria-label="Store" />
+        <datalist id="item-stores">
+          {stores.map((st) => (
+            <option key={st} value={st} />
+          ))}
+        </datalist>
+        <input className="input col-span-2 sm:col-span-1" placeholder="Note, e.g. Kirkland" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Note" />
+      </div>
+      <div className="flex gap-2">
+        <button className="btn-primary py-1.5">Save</button>
+        <button type="button" className="btn-secondary py-1.5" onClick={onCancel}>Cancel</button>
+      </div>
+    </form>
   );
 }

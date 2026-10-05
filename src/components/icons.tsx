@@ -39,3 +39,6 @@ export const StarIcon = ({ className, filled }: P & { filled?: boolean }) => (
     <path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9l-5.3 2.7 1-5.8-4.2-4.1 5.9-.9z" />
   </svg>
 );
+export const PencilIcon = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base}><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" /><path d="M14 6l4 4" /></svg>
+);

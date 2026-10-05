@@ -9,7 +9,9 @@ import { getPlan, sourcesFor } from "@/lib/data";
 import { buildGroceryLines, type IngredientSource } from "@/lib/grocery";
 import { suggestPlan, type LibraryItem, type PlanSuggestion } from "@/lib/ai/suggest-plan";
 import { formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
-import type { GroceryItem, Ingredient } from "@/lib/types";
+import { CATEGORIES, type Category, type GroceryItem, type Ingredient } from "@/lib/types";
+import { normalizeName } from "@/lib/grocery";
+import { parseGroceryLines } from "@/lib/ai/grocery-items";
 import { removeUnusedFiles } from "@/lib/files";
 import { newShortcutKey } from "@/lib/shortcuts";
 import { MAX_SERVINGS, isServings } from "@/lib/servings";
@@ -508,4 +510,57 @@ export async function turnOffShortcuts() {
   const { supabase, household } = await requireHousehold();
   await supabase.from("households").update({ shortcut_key_hash: null, shortcut_key_created_at: null }).eq("id", household.id);
   refresh();
+}
+
+// ---------------------------------------------------------------------------
+// Grocery aisles: remembered per household, AI for anything new
+// ---------------------------------------------------------------------------
+
+/**
+ * Puts a just-added grocery item in the right aisle. Uses what this household has
+ * used before for the same item; otherwise asks the AI once and remembers the answer.
+ * Returns the aisle if it changed.
+ */
+export async function autoCategorizeItem(itemId: string): Promise<{ category: Category } | null> {
+  const { supabase, household } = await requireHousehold();
+  const { data: item } = await supabase.from("grocery_items").select("id, name, category").eq("id", itemId).maybeSingle();
+  if (!item) return null;
+  const key = normalizeName(item.name);
+  if (!key) return null;
+
+  const { data: known } = await supabase
+    .from("grocery_item_categories")
+    .select("category")
+    .eq("household_id", household.id)
+    .eq("name_key", key)
+    .maybeSingle();
+  let category = (known?.category as Category | undefined) ?? null;
+
+  if (!category && process.env.ANTHROPIC_API_KEY) {
+    try {
+      category = (await parseGroceryLines([item.name]))[0]?.category ?? null;
+    } catch {
+      category = null; // keep the keyword guess the item was added with
+    }
+    if (category) {
+      await supabase
+        .from("grocery_item_categories")
+        .upsert({ household_id: household.id, name_key: key, category, source: "ai", updated_at: new Date().toISOString() });
+    }
+  }
+
+  if (!category || category === item.category) return null;
+  await supabase.from("grocery_items").update({ category }).eq("id", item.id);
+  return { category };
+}
+
+/** Called when someone changes an item's aisle by hand: that choice is used from now on. */
+export async function rememberCategory(name: string, category: Category) {
+  if (!(CATEGORIES as readonly string[]).includes(category)) return;
+  const key = normalizeName(name);
+  if (!key) return;
+  const { supabase, household } = await requireHousehold();
+  await supabase
+    .from("grocery_item_categories")
+    .upsert({ household_id: household.id, name_key: key, category, source: "user", updated_at: new Date().toISOString() });
 }
