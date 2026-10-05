@@ -28,13 +28,14 @@ function CopyField({ label, value, secret = false }: { label: string; value: str
   );
 }
 
-export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; enabledSince: string | null }) {
+export function ShortcutSetup({ endpoint, exportEndpoint, enabledSince }: { endpoint: string; exportEndpoint: string; enabledSince: string | null }) {
   const [key, setKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const enabled = Boolean(key || enabledSince);
-  const addressFor = (list: string) =>
-    `${endpoint}?list=${encodeURIComponent(list)}${key ? `&key=${encodeURIComponent(key)}` : "&key=YOUR-KEY"}`;
+  const keyParam = key ? `&key=${encodeURIComponent(key)}` : "&key=YOUR-KEY";
+  const addressFor = (list: string) => `${endpoint}?list=${encodeURIComponent(list)}${keyParam}`;
+  const exportAddressFor = (list: string) => `${exportEndpoint}?list=${encodeURIComponent(list)}${keyParam}`;
 
   const create = () =>
     start(async () => {
@@ -48,17 +49,22 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
     <div className="space-y-5">
       <section className="card space-y-3 p-4 text-sm">
         <h2 className="text-base font-semibold">How it works</h2>
-        <ol className="ml-5 list-decimal space-y-1 text-muted">
-          <li>Keep saying &ldquo;Hey Siri, add milk to my grocery list&rdquo; or &ldquo;…to my Costco list&rdquo; as usual.</li>
-          <li>
-            Before you shop, run the <b className="text-ink">Sync groceries</b> Shortcut (tap it, or &ldquo;Hey Siri, sync groceries&rdquo;).
-          </li>
-          <li>
-            Everything unticked on those Reminders lists moves into your current grocery list here, sorted by aisle and merged
-            with the meal plan. Items from a list named after a store (like Costco) are marked with that store.
-          </li>
-          <li>The Shortcut then ticks them off in Reminders so nothing is added twice.</li>
-        </ol>
+        <p className="text-muted">There are two optional Shortcuts. Use either or both.</p>
+        <div>
+          <p className="font-medium">Send groceries (app → Reminders)</p>
+          <p className="text-muted">
+            Before you shop, run <b className="text-ink">Send groceries</b>. Unticked items move into your Reminders lists (Costco items
+            into your Costco list, everything else into Groceries) and are ticked off here, so nothing is sent twice. You then shop
+            from Reminders.
+          </p>
+        </div>
+        <div>
+          <p className="font-medium">Sync groceries (Reminders → app)</p>
+          <p className="text-muted">
+            Keep saying &ldquo;Hey Siri, add milk to my grocery list&rdquo;, then run <b className="text-ink">Sync groceries</b> to pull
+            those items into the app, sorted by aisle and merged with the meal plan.
+          </p>
+        </div>
       </section>
 
       <section className="card space-y-3 p-4">
@@ -105,7 +111,70 @@ export function ShortcutSetup({ endpoint, enabledSince }: { endpoint: string; en
       </section>
 
       <section className="card space-y-4 p-4">
-        <h2 className="font-semibold">2. Build the Shortcut on your iPhone (once)</h2>
+        <h2 className="font-semibold">2. Send groceries: app → Reminders</h2>
+        <p className="text-sm text-muted">
+          Build this once on your iPhone. Open this page on the phone so you can copy and paste. Each Reminders list gets a small block of
+          actions: build the Groceries block, test it, then repeat it for Costco.
+        </p>
+        {!key && (
+          <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+            The addresses below include your key, which is only shown right after it&apos;s made.{" "}
+            {enabled ? "Tap “Make a new key” above to get addresses you can paste." : "Create a key above first."}
+          </p>
+        )}
+        <div className="space-y-3 text-sm">
+          <p className="font-medium">Start: in Shortcuts tap <b>+</b> and name it <b>Send groceries</b>.</p>
+          <h3 className="pt-1 font-semibold">Groceries block</h3>
+          <ol className="ml-5 list-[upper-alpha] space-y-3">
+            <li>
+              <b>Get Contents of URL</b>: paste this address. Tap the arrow to show more and set <b>Method</b> to <b>POST</b> (nothing
+              else: no headers, no body).
+              <div className="mt-2">
+                <CopyField label="Send to Groceries address" value={exportAddressFor("Grocery")} secret={Boolean(key)} />
+              </div>
+            </li>
+            <li>
+              <b>Text</b>: add the <i>Text</i> action, tap inside it, choose <i>Select Variable</i> and tap <b>Contents of URL</b>.
+            </li>
+            <li>
+              <b>If</b>: set the top to <i>All</i> are true, with two conditions: <i><b>Text</b> has any value</i>, and{" "}
+              <i><b>Text</b> does not begin with</i> <code>Sync failed</code>. This skips the rest when there&apos;s nothing to send or
+              something went wrong.
+            </li>
+            <li>
+              Inside the If, add <b>Split Text</b>: <i>Split <b>Text</b> by <b>New Lines</b></i>.
+            </li>
+            <li>
+              Still inside the If, add <b>Repeat with Each</b> item in <b>Split Text</b>. Inside the Repeat add <b>Add New Reminder</b>:
+              tap its text, choose <i>Select Variable</i> → <b>Repeat Item</b>, then tap the list name and choose your{" "}
+              <b>Groceries</b> list.
+            </li>
+            <li>
+              In the If&apos;s <b>Otherwise</b> part, add <b>Show Notification</b> with <b>Text</b>, so you see the reason if it didn&apos;t
+              send (it&apos;s blank when there was simply nothing to send).
+            </li>
+          </ol>
+          <p>
+            Optional: after <i>End If</i>, add <b>Show Notification</b> &ldquo;Groceries sent to Reminders&rdquo;.
+          </p>
+          <p>
+            <b>Preview first:</b> opening the address in Safari shows what would be sent without ticking anything. Only the Shortcut
+            (POST) sends and ticks items off.
+          </p>
+          <h3 className="pt-1 font-semibold">Costco block (and any other store)</h3>
+          <p className="text-muted">
+            Add actions A–F again below, with this address in A and your <b>Costco</b> Reminders list in E. Pick the variables from the
+            Costco actions.
+          </p>
+          <CopyField label="Send to Costco address" value={exportAddressFor("Costco")} secret={Boolean(key)} />
+          <p className="text-muted">
+            Items ticked by mistake are still in the app under <b>Show completed</b>; untick them there to put them back.
+          </p>
+        </div>
+      </section>
+
+      <section className="card space-y-4 p-4">
+        <h2 className="font-semibold">3. Sync groceries: Reminders → app (optional)</h2>
         <p className="text-sm text-muted">
           Each Reminders list gets its own small block of actions. Build the Grocery block first and test it, then add Costco.
           Tip: open this page on your iPhone so you can copy and paste as you go.

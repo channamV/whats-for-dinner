@@ -18,9 +18,13 @@ export default async function ShortcutsPage() {
       <Link href="/settings" className="text-sm text-accent">← Settings</Link>
       <PageHeader
         title="iPhone Reminders & Siri"
-        subtitle="Optional. Keep adding things with Siri or the Reminders app, then pull them into your grocery list with one tap."
+        subtitle="Optional. Send your grocery list to iPhone Reminders before you shop, or pull Siri and Reminders items into the app."
       />
-      <ShortcutSetup endpoint={`${origin}/api/shortcuts/sync`} enabledSince={(data?.shortcut_key_created_at as string | null) ?? null} />
+      <ShortcutSetup
+        endpoint={`${origin}/api/shortcuts/sync`}
+        exportEndpoint={`${origin}/api/shortcuts/export`}
+        enabledSince={(data?.shortcut_key_created_at as string | null) ?? null}
+      />
     </div>
   );
 }
