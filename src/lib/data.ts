@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GroceryItem, GroceryList, Ingredient, Meal, MealDish, PlanEntry, Recipe } from "./types";
-import type { IngredientSource } from "./grocery";
+import { hasNoIngredients, placeholderSource, type IngredientSource } from "./grocery";
 
 export type MealWithDishes = Meal & { dishes: (MealDish & { recipe: Recipe })[] };
 export type PlanEntryFull = PlanEntry & { meal: Meal | null; recipe: Recipe | null };
@@ -100,16 +100,16 @@ export async function sourcesFor(
   if (target.mealId) {
     const meal = await getMeal(sb, target.mealId);
     if (!meal) return [];
-    return meal.dishes.map((d) => ({
-      label: meal.title,
-      ingredients: d.recipe.ingredients as Ingredient[],
-      baseServings: d.recipe.base_servings,
-      servings,
-    }));
+    return meal.dishes.map((d) =>
+      hasNoIngredients(d.recipe.ingredients)
+        ? placeholderSource(d.recipe.title, meal.title)
+        : { label: meal.title, ingredients: d.recipe.ingredients as Ingredient[], baseServings: d.recipe.base_servings, servings },
+    );
   }
   if (target.recipeId) {
     const { data } = await sb.from("recipes").select("title, ingredients, base_servings").eq("id", target.recipeId).maybeSingle();
     if (!data) return [];
+    if (hasNoIngredients(data.ingredients)) return [placeholderSource(data.title)];
     return [{ label: data.title, ingredients: data.ingredients as Ingredient[], baseServings: data.base_servings, servings }];
   }
   return [];

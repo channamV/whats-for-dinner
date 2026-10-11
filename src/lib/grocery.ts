@@ -72,6 +72,22 @@ export type IngredientSource = {
   store?: string | null;
 };
 
+/** True when a dish has no usable ingredients saved (e.g. typed into the plan, or saved without them). */
+export function hasNoIngredients(ingredients: Ingredient[] | null | undefined): boolean {
+  return !ingredients?.some((i) => i.name?.trim());
+}
+
+/** A single "Ingredients for <dish>" line, so dishes without ingredients still show up on the list. */
+export function placeholderSource(dish: string, label = dish): IngredientSource {
+  const name = `Ingredients for ${dish.trim()}`;
+  return {
+    label: label.trim(),
+    ingredients: [{ name, quantity: null, unit: null, note: null, scales: false, pantry: false, category: "other" }],
+    baseServings: 1,
+    servings: 1,
+  };
+}
+
 /**
  * Combines ingredients from several recipes (already at their own base
  * servings) into grocery lines, scaling each to its planned servings and

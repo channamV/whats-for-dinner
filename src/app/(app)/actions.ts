@@ -6,7 +6,7 @@ import { z } from "zod";
 import { DishSchema } from "@/lib/ai/schema";
 import { requireHousehold } from "@/lib/session";
 import { getPlan, sourcesFor } from "@/lib/data";
-import { buildGroceryLines, type IngredientSource } from "@/lib/grocery";
+import { buildGroceryLines, placeholderSource, type IngredientSource } from "@/lib/grocery";
 import { suggestPlan, type LibraryItem, type PlanSuggestion } from "@/lib/ai/suggest-plan";
 import { formatDay, isIsoDate, today, weekDates } from "@/lib/dates";
 import { CATEGORIES, type Category, type GroceryItem, type Ingredient } from "@/lib/types";
@@ -444,7 +444,14 @@ export async function groceryListFromPlan(form: FormData) {
   if (!isIsoDate(from) || !isIsoDate(to)) return;
   const entries = (await getPlan(supabase, from, to)).filter((e) => !e.cooked);
   const sources = (
-    await Promise.all(entries.map((e) => sourcesFor(supabase, { mealId: e.meal_id, recipeId: e.recipe_id }, e.servings)))
+    await Promise.all(
+      entries.map((e) =>
+        // Typed entries ("Tacos") aren't in the database, so they become an "Ingredients for Tacos" line.
+        !e.meal_id && !e.recipe_id
+          ? e.note?.trim() ? [placeholderSource(e.note)] : []
+          : sourcesFor(supabase, { mealId: e.meal_id, recipeId: e.recipe_id }, e.servings),
+      ),
+    )
   ).flat();
   const listId = await resolveList(form, `Week of ${formatDay(from, { month: "short", day: "numeric" })}`);
   await mergeIntoList(listId, sources, form.get("include_pantry") === "on");

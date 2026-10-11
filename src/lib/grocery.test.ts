@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroceryLines, normalizeName } from "./grocery";
+import { buildGroceryLines, hasNoIngredients, normalizeName, placeholderSource } from "./grocery";
 import { piadina } from "./__fixtures__/piadina";
 import type { Ingredient } from "./types";
 
@@ -70,5 +70,20 @@ describe("real import: pork fajitas", () => {
     expect(lines.find((l) => l.name === "Red Onion")).toMatchObject({ quantity: 226, unit: "g" });
     expect(lines.find((l) => l.name === "Pork Strips")).toMatchObject({ quantity: 680, unit: "g" });
     expect(lines.find((l) => l.name.startsWith("Chipotle"))?.quantity).toBe(0.125); // fixed amount
+  });
+});
+
+describe("dishes without ingredients", () => {
+  it("detects empty and blank ingredient lists", () => {
+    expect(hasNoIngredients([])).toBe(true);
+    expect(hasNoIngredients(null)).toBe(true);
+    expect(hasNoIngredients([{ name: "  ", quantity: null, unit: null, note: null, scales: true, pantry: false, category: "produce" }])).toBe(true);
+    expect(hasNoIngredients([{ name: "Lime", quantity: 1, unit: null, note: null, scales: true, pantry: false, category: "produce" }])).toBe(false);
+  });
+
+  it("adds one 'Ingredients for' line per dish, merged when planned twice", () => {
+    const lines = buildGroceryLines([placeholderSource("Tacos"), placeholderSource("Tacos"), placeholderSource("Caesar Salad", "Steak Night")]);
+    expect(lines.map((l) => l.name)).toEqual(["Ingredients for Caesar Salad", "Ingredients for Tacos"]);
+    expect(lines[0]).toMatchObject({ quantity: null, unit: null, category: "other", sources: ["Steak Night"] });
   });
 });
