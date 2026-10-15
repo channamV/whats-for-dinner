@@ -7,11 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { requireHousehold } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
 import { updateHousehold } from "../actions";
+import { switchHousehold } from "@/app/welcome/actions";
+import { WelcomeForms } from "@/app/welcome/welcome-forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  const { supabase, user, household, displayName } = await requireHousehold();
+  const { supabase, user, household, displayName, families } = await requireHousehold();
   const { data: members } = await supabase
     .from("household_members")
     .select("user_id, display_name, role")
@@ -61,6 +63,34 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section id="families" className="card space-y-3 p-4">
+        <h2 className="font-semibold">Your families</h2>
+        <p className="text-sm text-muted">
+          Each family has its own recipes, meal plan, grocery lists and invite code. You see one at a time; switching changes it on all your devices.
+        </p>
+        <ul className="divide-y divide-line text-sm">
+          {families.map((f) => (
+            <li key={f.id} className="flex items-center justify-between gap-3 py-2">
+              <span className="font-medium">{f.name}</span>
+              {f.id === household.id ? (
+                <span className="chip bg-accent-soft text-accent">Current</span>
+              ) : (
+                <form action={switchHousehold}>
+                  <input type="hidden" name="household_id" value={f.id} />
+                  <button className="btn-secondary py-1.5">Switch</button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+        <details className="group">
+          <summary className="btn-ghost cursor-pointer list-none">+ Start or join another family</summary>
+          <div className="mt-3">
+            <WelcomeForms inviteCode="" another />
+          </div>
+        </details>
       </section>
 
       <section className="card space-y-2 p-4">

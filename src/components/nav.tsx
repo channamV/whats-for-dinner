@@ -34,7 +34,9 @@ export function Nav({ householdName }: { householdName: string }) {
               </Link>
             ))}
           </nav>
-          <span className="ml-auto text-sm text-muted">{householdName}</span>
+          <Link href="/settings#families" className="ml-auto text-sm text-muted hover:text-ink" title="Switch family">
+            {householdName}
+          </Link>
         </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">

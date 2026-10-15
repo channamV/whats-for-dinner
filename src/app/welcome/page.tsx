@@ -17,13 +17,18 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
     .from("household_members")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
-  if (count) redirect("/");
+  // Already in a family: only stay here to join another one from an invite link.
+  if (count && !code) redirect("/");
 
   return (
     <main className="mx-auto max-w-md px-4 py-10">
-      <h1 className="mb-2 font-display text-3xl font-bold">Welcome!</h1>
-      <p className="mb-6 text-muted">Recipes, plans and grocery lists are shared with everyone in your household.</p>
-      <WelcomeForms inviteCode={code} />
+      <h1 className="mb-2 font-display text-3xl font-bold">{count ? "Join another family" : "Welcome!"}</h1>
+      <p className="mb-6 text-muted">
+        {count
+          ? "You're already in a family. Joining this one adds it alongside - switch between them in Settings."
+          : "Recipes, plans and grocery lists are shared with everyone in your household."}
+      </p>
+      <WelcomeForms inviteCode={code} another={Boolean(count)} />
     </main>
   );
 }
