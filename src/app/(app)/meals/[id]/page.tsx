@@ -14,6 +14,7 @@ import { OriginalLinks } from "@/components/original-links";
 import { requireHousehold } from "@/lib/session";
 import { DISH_ROLES } from "@/lib/types";
 import { addDishToMeal, deleteMeal, removeDishFromMeal } from "../../actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export async function generateMetadata(props: PageProps<"/meals/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -96,7 +97,7 @@ export default async function MealPage(props: PageProps<"/meals/[id]">) {
           <select name="role" className="input w-auto" defaultValue="side">
             {DISH_ROLES.map((r) => <option key={r}>{r}</option>)}
           </select>
-          <button className="btn-primary">Add</button>
+          <SubmitButton>Add</SubmitButton>
         </form>
         <Link href={`/recipes/new?meal=${meal.id}`} className="btn-ghost mt-2 px-0"><PlusIcon className="h-4 w-4" /> Or write a new dish</Link>
       </details>

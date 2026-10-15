@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { getMeal } from "@/lib/data";
 import { requireHousehold } from "@/lib/session";
 import { updateMeal } from "../../../actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Edit meal" };
 
@@ -38,7 +39,7 @@ export default async function EditMealPage(props: PageProps<"/meals/[id]/edit">)
           <label className="label">Notes</label>
           <textarea className="input min-h-24" name="notes" defaultValue={meal.notes ?? ""} />
         </div>
-        <button className="btn-primary">Save</button>
+        <SubmitButton>Save</SubmitButton>
       </form>
     </div>
   );

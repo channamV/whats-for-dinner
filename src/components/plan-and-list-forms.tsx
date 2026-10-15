@@ -2,6 +2,7 @@ import { addToGroceryList, addToPlan } from "@/app/(app)/actions";
 import { today } from "@/lib/dates";
 import type { GroceryList } from "@/lib/types";
 import { CalendarIcon, CartIcon } from "./icons";
+import { SubmitButton } from "@/components/submit-button";
 
 /** "Add to plan" and "Add to grocery list" for a meal or a single dish. */
 export function PlanAndListForms({ target, servings, lists }: { target: string; servings: number; lists: GroceryList[] }) {
@@ -15,7 +16,7 @@ export function PlanAndListForms({ target, servings, lists }: { target: string; 
         <p className="flex items-center gap-2 font-semibold"><CalendarIcon className="h-5 w-5 text-accent" /> Add to meal plan</p>
         <div className="flex gap-2">
           <input className="input" type="date" name="date" defaultValue={today()} required />
-          <button className="btn-primary shrink-0">Add</button>
+          <SubmitButton className="btn-primary shrink-0">Add</SubmitButton>
         </div>
         <p className="text-xs text-muted">Planned for {servings}.</p>
       </form>
@@ -30,7 +31,7 @@ export function PlanAndListForms({ target, servings, lists }: { target: string; 
             ))}
             <option value="new">+ New list</option>
           </select>
-          <button className="btn-primary shrink-0">Add</button>
+          <SubmitButton className="btn-primary shrink-0">Add</SubmitButton>
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
           <input type="checkbox" name="include_pantry" /> Include pantry staples (oil, salt, sugar…)

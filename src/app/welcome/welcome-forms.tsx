@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Spinner } from "@/components/spinner";
 import { createHousehold, joinHousehold, type WelcomeState } from "./actions";
 
 /** `another` is for someone already in a family adding a second one (from Settings or an invite link). */
@@ -22,6 +23,7 @@ export function WelcomeForms({ inviteCode, another = false }: { inviteCode: stri
       <input className="input" name="display_name" placeholder="Your first name (optional)" />
       {joinState.error && <p className="text-sm text-warn">{joinState.error}</p>}
       <button className={`${invited ? "btn-primary" : "btn-secondary"} w-full`} disabled={joining}>
+        {joining && <Spinner />}
         Join household
       </button>
     </form>
@@ -39,6 +41,7 @@ export function WelcomeForms({ inviteCode, another = false }: { inviteCode: stri
       <input className="input" name="display_name" placeholder="Your first name (optional)" />
       {createState.error && <p className="text-sm text-warn">{createState.error}</p>}
       <button className={`${invited ? "btn-secondary" : "btn-primary"} w-full`} disabled={creating}>
+        {creating && <Spinner />}
         Create household
       </button>
     </form>

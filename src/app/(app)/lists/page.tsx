@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { getLists } from "@/lib/data";
 import { requireHousehold } from "@/lib/session";
 import { createList } from "../actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Grocery lists" };
 
@@ -18,7 +19,7 @@ export default async function ListsPage() {
       <PageHeader title="Grocery lists" subtitle="Build one from your meal plan, a meal, or add items by hand." />
       <form action={createList} className="mb-5 flex gap-2">
         <input className="input" name="name" placeholder="New list name, e.g. Costco run" />
-        <button className="btn-primary shrink-0">Create</button>
+        <SubmitButton className="btn-primary shrink-0">Create</SubmitButton>
       </form>
       {open.length === 0 && (
         <p className="card p-6 text-center text-muted">

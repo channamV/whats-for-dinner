@@ -48,6 +48,44 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  /* no double-tap-to-zoom wait before a tap registers */
+  touch-action: manipulation;
+}
+
+@layer base {
+  /* Instant "pressed" feedback, since the next screen can take a moment to load. */
+  a,
+  summary {
+    transition: opacity 120ms, transform 120ms, background-color 120ms;
+  }
+  a:active,
+  summary:active {
+    opacity: 0.6;
+  }
+  a.card:active {
+    opacity: 1;
+    transform: scale(0.985);
+    background: var(--surface-2);
+  }
+}
+
+.nav-progress {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 50;
+  height: 3px;
+  width: 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+@keyframes nav-progress {
+  0% { width: 0; }
+  5% { width: 35%; }
+  100% { width: 92%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress { animation: none; width: 100%; opacity: 0.7; }
 }
 
 body {
@@ -61,23 +99,23 @@ body {
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-[color,background-color,border-color,opacity,scale] duration-100 active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none;
 }
 
 @utility btn-primary {
-  @apply btn bg-accent text-accent-ink hover:opacity-90;
+  @apply btn bg-accent text-accent-ink hover:opacity-90 active:opacity-75;
 }
 
 @utility btn-secondary {
-  @apply btn border border-line bg-surface text-ink hover:bg-surface-2;
+  @apply btn border border-line bg-surface text-ink hover:bg-surface-2 active:bg-surface-2;
 }
 
 @utility btn-ghost {
-  @apply btn text-muted hover:bg-surface-2 hover:text-ink;
+  @apply btn text-muted hover:bg-surface-2 hover:text-ink active:bg-surface-2 active:text-ink;
 }
 
 @utility btn-danger {
-  @apply btn text-warn hover:bg-warn-soft;
+  @apply btn text-warn hover:bg-warn-soft active:bg-warn-soft;
 }
 
 @utility input {

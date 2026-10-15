@@ -9,6 +9,7 @@ import { addToPlan, groceryListFromPlan } from "../actions";
 import { EntryControls } from "./entry-controls";
 import { ServingsSelect } from "@/components/servings-select";
 import { SuggestPanel } from "./suggest-panel";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Meal plan" };
 
@@ -110,7 +111,7 @@ export default async function PlanPage(props: PageProps<"/plan">) {
                   aria-label={`Add to ${formatDay(date, { weekday: "long" })}`}
                 />
                 <ServingsSelect name="servings" defaultValue={household.default_servings} prefix="Feeds " />
-                <button className="btn-secondary py-1.5">Add</button>
+                <SubmitButton className="btn-secondary py-1.5">Add</SubmitButton>
               </form>
             </li>
           );
@@ -139,7 +140,7 @@ export default async function PlanPage(props: PageProps<"/plan">) {
             <option value="new">New list</option>
             {lists.filter((l) => !l.archived).map((l) => <option key={l.id} value={l.id}>Add to: {l.name}</option>)}
           </select>
-          <button className="btn-primary" disabled={!entries.length}>Build list</button>
+          <SubmitButton disabled={!entries.length}>Build list</SubmitButton>
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
           <input type="checkbox" name="include_pantry" /> Include pantry staples

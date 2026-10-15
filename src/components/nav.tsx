@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { BookIcon, CalendarIcon, CartIcon, GearIcon, HomeIcon } from "./icons";
 
@@ -14,6 +14,17 @@ const ITEMS = [
 
 function isActive(path: string, href: string) {
   return href === "/" ? path === "/" : path.startsWith(href) || (href === "/recipes" && path.startsWith("/meals"));
+}
+
+/** Lights the tapped tab up straight away, before the page arrives. */
+function Tab({ active, Icon, label }: { active: boolean; Icon: (typeof ITEMS)[number]["Icon"]; label: string }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${active || pending ? "text-accent" : "text-muted"}`}>
+      <Icon className={`h-6 w-6 transition-transform ${pending ? "scale-110" : ""}`} />
+      {label}
+    </span>
+  );
 }
 
 export function Nav({ householdName }: { householdName: string }) {
@@ -42,11 +53,9 @@ export function Nav({ householdName }: { householdName: string }) {
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="grid grid-cols-5">
           {ITEMS.map(({ href, label, Icon }) => {
-            const active = isActive(path, href);
             return (
-              <Link key={href} href={href} className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${active ? "text-accent" : "text-muted"}`}>
-                <Icon className="h-6 w-6" />
-                {label}
+              <Link key={href} href={href}>
+                <Tab active={isActive(path, href)} Icon={Icon} label={label} />
               </Link>
             );
           })}

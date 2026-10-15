@@ -9,6 +9,7 @@ import { signOut } from "@/app/login/actions";
 import { updateHousehold } from "../actions";
 import { switchHousehold } from "@/app/welcome/actions";
 import { WelcomeForms } from "@/app/welcome/welcome-forms";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -45,7 +46,7 @@ export default async function SettingsPage() {
             <input className="input" name="display_name" defaultValue={displayName ?? ""} />
           </div>
         </div>
-        <button className="btn-primary">Save</button>
+        <SubmitButton>Save</SubmitButton>
       </form>
 
       <section className="card space-y-3 p-4">
@@ -79,7 +80,7 @@ export default async function SettingsPage() {
               ) : (
                 <form action={switchHousehold}>
                   <input type="hidden" name="household_id" value={f.id} />
-                  <button className="btn-secondary py-1.5">Switch</button>
+                  <SubmitButton className="btn-secondary py-1.5">Switch</SubmitButton>
                 </form>
               )}
             </li>
@@ -109,7 +110,7 @@ export default async function SettingsPage() {
         <p className="mb-2 text-sm text-muted">Signed in as {user.email}</p>
         <div className="flex gap-2">
           <Link href="/reset-password" className="btn-secondary">Change password</Link>
-          <button className="btn-secondary">Sign out</button>
+          <SubmitButton className="btn-secondary">Sign out</SubmitButton>
         </div>
       </form>
     </div>
